@@ -1,0 +1,200 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Lets a release be rebuilt from the current main without a dummy commit.
+  workflow_dispatch:
+
+jobs:
+  app:
+    name: app (Flutter)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          # Pinned to the version scripts/ci_mirror.sh runs against locally.
+          # A drift here is the whole failure mode the mirror exists to
+          # prevent: green locally, red in CI, with no local diff to explain
+          # it.
+          flutter-version: 3.47.2
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze --fatal-infos --fatal-warnings
+      - run: dart format --set-exit-if-changed lib/ test/
+      - run: flutter test --coverage
+      # Both coverage gates, delegated to the same script the pre-push mirror
+      # runs. Reimplementing the LF/LH sum here is how CI and the local gate
+      # drift -- and this one has to know which lines are marked
+      # `// coverage:ignore-line`, which a bare percentage cannot.
+      - name: Enforce coverage
+        run: bash scripts/ci_mirror.sh --coverage-only
+
+      # Android-only, so the shipping artefact is the APK. (The donor repo
+      # built web here to catch a `dart:io` import reaching lib/main.dart;
+      # this app has no web target and dart:io in lib/ is fine.)
+      # No `--flavor`: unlike punchme, this repo declares no product flavors,
+      # so the artefact is app-release.apk. Adding one would rename it to
+      # app-<flavor>-release.apk and break every path below.
+      - run: flutter build apk --release
+
+  # Builds the phone APK, signs it with the shared release key, and publishes
+  # it to Releases. Gated on `app` so a commit that fails analyze/tests/the
+  # coverage bar never reaches the releases page.
+  #
+  # NOTE: versionCode is `git rev-list --count HEAD`, which survives a rename
+  # of this file. (github.run_number is per-workflow-FILE and resets to 1 on
+  # rename -- versionCode would go backwards and Android would silently refuse
+  # every future update.) It needs fetch-depth: 0 to see the full history.
+  release:
+    name: release (APK)
+    needs: app
+    # Publishes on a push to main, or on a manual rebuild. Never on a PR.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # Full history: versionCode is the commit count, which a shallow
+      # checkout would compute as 1.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # `.versioncode-offset` is read by ~/.claude/scripts/phone_deploy.sh too,
+      # so a local build and a CI build can never disagree about the base.
+      # It is 0 here and should stay 0: this is a fresh package with nothing
+      # installed on any phone. It exists as the recovery valve for the failure
+      # punchme hit -- a phone stranded at a versionCode above the commit count
+      # by an old hand-numbered build, after which Android (which only ever
+      # accepts an increase) refuses every update short of an uninstall, and an
+      # uninstall wipes the app's data. Raising the base is a one-way door.
+      - name: Compute versionCode from the commit count
+        id: code
+        run: |
+          offset=$(cat .versioncode-offset 2>/dev/null || echo 0)
+          echo "value=$(( $(git rev-list --count HEAD) + offset ))" \
+            >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Read version from pubspec
+        id: ver
+        run: |
+          set -euo pipefail
+          # 1.0.0+1 -> 1.0.0; the +build part is replaced by the run number.
+          raw=$(grep -m1 -E '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//')
+          semver=${raw%%+*}
+          if ! echo "$semver" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::pubspec version '$raw' is not X.Y.Z"; exit 1
+          fi
+          echo "semver=$semver" >> "$GITHUB_OUTPUT"
+
+      # One step, no echoes, printf-into-file rather than echo: the key must
+      # never reach the log. storeFile is ABSOLUTE because key.properties is
+      # read from android/ while file() resolves against android/app/.
+      - name: Materialise the release keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not set; refusing to publish."
+            exit 1
+          fi
+          umask 077
+          ks="$GITHUB_WORKSPACE/android/app/kuhy-release.jks"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$ks"
+          {
+            printf 'storeFile=%s\n' "$ks"
+            printf 'storePassword=%s\n' "$STORE_PASS"
+            printf 'keyAlias=%s\n' "$KEY_ALIAS"
+            printf 'keyPassword=%s\n' "$KEY_PASS"
+          } > "$GITHUB_WORKSPACE/android/key.properties"
+          # Diagnostic only — a wrong path should be visible, not a silent
+          # fallback to the debug key. Passwords are not printed.
+          ls -l "$ks"
+
+      - run: flutter pub get
+
+      - name: Build signed APK
+        run: |
+          flutter build apk --release \
+            --build-name="${{ steps.ver.outputs.semver }}" \
+            --build-number="${{ steps.code.outputs.value }}"
+
+      # Fail closed. `findByName("release") ?: debug` silently falls back to
+      # the debug key if key.properties is misplaced, producing a green build
+      # that can never be installed over. This is the check that catches it.
+      - name: Verify the APK is release-signed
+        run: |
+          set -euo pipefail
+          apk=build/app/outputs/flutter-apk/app-release.apk
+          signer=$(ls -d "$ANDROID_SDK_ROOT"/build-tools/* | sort -V | tail -1)/apksigner
+          "$signer" verify --print-certs "$apk" | tee /tmp/certs.txt
+          if grep -qi 'CN=Android Debug' /tmp/certs.txt; then
+            echo "::error::APK is debug-signed; not publishing."; exit 1
+          fi
+          if ! grep -q 'CN=kuhy' /tmp/certs.txt; then
+            echo "::error::APK is not signed with the kuhy release key."; exit 1
+          fi
+
+      - name: Shred the signing material
+        if: always()
+        run: |
+          rm -f "$GITHUB_WORKSPACE/android/key.properties" \
+                "$GITHUB_WORKSPACE/android/app/kuhy-release.jks"
+
+      - name: Name the asset
+        id: art
+        run: |
+          set -euo pipefail
+          out="restaurant-rater-${{ steps.ver.outputs.semver }}-build.${{ steps.code.outputs.value }}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "$out"
+          echo "path=$out" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the per-commit prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="v${{ steps.ver.outputs.semver }}-build.${{ steps.code.outputs.value }}"
+          gh release create "$tag" "${{ steps.art.outputs.path }}" \
+            --prerelease \
+            --target "${{ github.sha }}" \
+            --title "$tag" \
+            --notes "Automated build of ${{ github.sha }} (versionCode ${{ steps.code.outputs.value }})."
+
+      # Cut a clean vX.Y.Z the first time a pubspec version is seen. A failing
+      # `gh release view` is the "not published yet" signal, which also covers
+      # the first-ever run on a repo with no releases.
+      - name: Publish the clean version release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="v${{ steps.ver.outputs.semver }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "$tag already exists; leaving it as-is."; exit 0
+          fi
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "Tag $tag exists without a release; refusing to clobber."; exit 0
+          fi
+          gh release create "$tag" "${{ steps.art.outputs.path }}" \
+            --target "${{ github.sha }}" \
+            --title "$tag" \
+            --notes "Release $tag (versionCode ${{ steps.code.outputs.value }})."

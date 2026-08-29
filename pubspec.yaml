@@ -1,0 +1,74 @@
+name: restaurant_rater
+description: "Rate restaurant dishes: taste, smell and looks on 0-10, with macros and a photo."
+publish_to: "none"
+
+# X.Y.Z only. The +build suffix is set by CI from the commit count
+# (see .github/workflows/ci.yml) and by scripts/phone_deploy.sh locally, so a
+# hand-written one here would only ever be wrong.
+version: 1.0.0+1
+
+environment:
+  # Matches the installed Dart 3.13.2. Flutter itself is pinned in .fvmrc.
+  sdk: ^3.13.0
+
+# Every pub.dev dependency is exact-pinned, no caret: a range is
+# "newest-compatible" by definition and gives the freshness gate nothing to
+# compare. See rules/dependency-freshness.instructions.md.
+# Alphabetical, because `sort_pub_dependencies` requires it. Several entries
+# below arrive transitively through crdt_sync_flutter but are named directly by
+# lib/, and `depend_on_referenced_packages` rightly refuses to let a direct
+# import ride on someone else's dependency -- a bump there would otherwise
+# break this app with no line in this file to explain it.
+dependencies:
+  # Shared packages live in the kuhyx/utils monorepo and are pinned to a tag,
+  # never a branch: a branch ref makes the build non-reproducible.
+  crdt_sync:
+    git:
+      url: https://github.com/kuhyx/utils
+      ref: crdt_sync_dart-v0.11.1
+      path: crdt_sync_dart
+  crdt_sync_flutter:
+    git:
+      url: https://github.com/kuhyx/utils
+      ref: crdt_sync_flutter-v0.3.1
+      path: crdt_sync_flutter
+  # There is deliberately no local theme.dart, so this app cannot drift off
+  # the shared token table.
+  design_system:
+    git:
+      url: https://github.com/kuhyx/utils
+      ref: design_system-v0.2.1
+      path: design_system
+  flutter:
+    sdk: flutter
+  flutter_secure_storage: 11.0.0 # holds the sync account password
+  google_sign_in_platform_interface: 3.1.0 # the injectable sign-in seam
+  http: 1.6.0 # http.Client, injected so sync is testable offline
+  image_picker: 1.2.3
+  meta: 1.19.0 # @immutable on every model
+  path: 1.9.1
+  path_provider: 2.1.6
+  uuid: 4.6.0
+
+dev_dependencies:
+  flutter_launcher_icons: 0.14.4
+  flutter_test:
+    sdk: flutter
+  # Carets are allowed here only because very_good_analysis is SDK-coupled;
+  # the freshness gate still checks the range floor against latest.
+  very_good_analysis: ^10.3.0
+
+flutter:
+  uses-material-design: true
+
+# Regenerate the source PNGs with the shared generator, never by hand:
+#   PYTHONPATH=~/testsAndMisc python3 -m python_pkg.app_icons \
+#     generate --app restaurant_rater
+#   dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#211D1B"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  adaptive_icon_monochrome: "assets/icon/icon_monochrome.png"

@@ -1,0 +1,94 @@
+# Pre-commit configuration for restaurant-rater.
+#
+# Install:  scripts/install_hooks.sh
+# Run:      pre-commit run --all-files
+#
+# Only NON-MUTATING checks belong here. A hook that rewrites a tracked file
+# (the patch-version bump) runs from the wrapper hook installed by
+# scripts/install_hooks.sh instead -- rewriting pubspec.yaml inside
+# pre-commit's stash window makes its `git apply` conflict and silently drops
+# the developer's uncommitted edits.
+
+default_stages: [pre-commit]
+fail_fast: true
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: [--maxkb=2000]
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+
+  - repo: local
+    hooks:
+      # Gate first: a local crdt_sync override left in place makes CI build a
+      # library this checkout has never tested against, silently and in both
+      # directions. Blocking the commit is the only thing that prevents it.
+      #
+      # always_run/pass_filenames rather than `files:`: a poisoned pubspec can
+      # arrive by pull or merge, and a staged-only trigger would then never
+      # look at it again for any commit that does not happen to touch
+      # pubspec.yaml.
+      - id: no-crdt-sync-override
+        name: no local crdt_sync dependency_override
+        entry: scripts/check_no_crdt_sync_override.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      # These gates are thin delegates to ~/utils, which owns the rules so that
+      # one repo's idea of "too long" or "badly named" cannot drift.
+      - id: file-length
+        name: file length <= 250 lines
+        entry: scripts/check_file_length.sh
+        language: system
+
+      - id: md-naming
+        name: markdown naming convention
+        entry: scripts/check_md_naming.sh
+        language: system
+        files: \.(md|markdown)$
+
+      # Every dependency on its ecosystem's newest STABLE release, exact-pinned
+      # so the question is mechanically answerable at all.
+      #
+      # `files:` is what keeps this cheap: a commit touching only Dart makes
+      # ZERO network requests, and a manifest commit mostly hits a 6h cache.
+      #
+      # Deliberately WITHOUT --strict. Offline the gate degrades to its cached
+      # answer and passes with a loud banner; `--no-verify` is banned, so a
+      # hook that hard-failed on a flaky connection would leave no way to
+      # commit. CI, always online, runs --strict and is the real authority.
+      - id: dependency-freshness
+        name: dependencies on newest stable
+        entry: scripts/check_dependency_freshness.sh
+        language: system
+        pass_filenames: true
+        files: >-
+          (pubspec\.(yaml|lock)|pyproject\.toml|requirements.*\.txt|uv\.lock
+          |package\.json|package-lock\.json|pnpm-lock\.yaml
+          |Cargo\.(toml|lock)|go\.(mod|sum)
+          |\.fvmrc|\.nvmrc|\.python-version)$
+
+      # Minutes-long, so pre-push rather than pre-commit.
+      - id: ci-mirror
+        name: CI mirror (clean, analyze, format, coverage, apk)
+        entry: bash scripts/ci_mirror.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        require_serial: true
+        stages: [pre-push]
