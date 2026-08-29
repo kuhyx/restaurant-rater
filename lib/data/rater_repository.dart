@@ -4,6 +4,19 @@ library;
 import 'package:restaurant_rater/models/rater_snapshot.dart';
 import 'package:restaurant_rater/models/tasting.dart';
 
+/// Cleans up a name as typed, so no backend can store a ragged one.
+///
+/// Trims the ends and collapses runs of whitespace, so `"tom  kha "` and
+/// `"tom kha"` are the same dish rather than two that look identical in the
+/// list and sort apart.
+///
+/// A free function beside the interface rather than a step each caller
+/// remembers: the two dialogs used to trim independently, neither collapsed
+/// interior spaces, and a name arriving from an importer or another device
+/// went through neither. Every implementation runs it, so the invariant holds
+/// wherever a name comes from.
+String cleanName(String raw) => raw.trim().replaceAll(RegExp(r'\s+'), ' ');
+
 /// Everything the UI is allowed to do to the data.
 ///
 /// Abstract for one reason that pays for itself immediately: widget tests run

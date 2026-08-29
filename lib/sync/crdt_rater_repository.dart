@@ -58,7 +58,7 @@ class CrdtRaterRepository implements RaterRepository {
   Future<void> addRestaurant({required String name, String? note}) async {
     final restaurant = Restaurant(
       id: uuid.v4(),
-      name: name,
+      name: cleanName(name),
       createdAt: _now().toUtc(),
       note: note,
     );
@@ -77,7 +77,7 @@ class CrdtRaterRepository implements RaterRepository {
     // null has to outrank the old value on every peer.
     await _upsertMerged(
       restaurantToRecord(
-        existing.copyWith(name: name, note: () => note),
+        existing.copyWith(name: cleanName(name), note: () => note),
         store.nextHlc(),
         includeCleared: true,
       ),
@@ -101,7 +101,7 @@ class CrdtRaterRepository implements RaterRepository {
     final item = MenuItem(
       id: uuid.v4(),
       restaurantId: restaurantId,
-      name: name,
+      name: cleanName(name),
       // The menu position IS the clock this write is stamped at, so "the order
       // I typed them in" needs no separate counter and cannot collide across
       // devices.
@@ -121,7 +121,7 @@ class CrdtRaterRepository implements RaterRepository {
     if (existing == null) return;
     await _upsertMerged(
       menuItemToRecord(
-        existing.copyWith(name: name, priceGrosz: () => priceGrosz),
+        existing.copyWith(name: cleanName(name), priceGrosz: () => priceGrosz),
         store.nextHlc(),
         includeCleared: true,
       ),

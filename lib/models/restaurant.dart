@@ -2,7 +2,7 @@
 library;
 
 import 'package:meta/meta.dart';
-import 'package:restaurant_rater/models/replace.dart';
+import 'package:restaurant_rater/models/macros.dart';
 
 /// A restaurant, and the dish currently committed to be eaten there.
 @immutable

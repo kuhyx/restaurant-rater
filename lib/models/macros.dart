@@ -2,7 +2,23 @@
 library;
 
 import 'package:meta/meta.dart';
-import 'package:restaurant_rater/models/replace.dart';
+
+/// Returns the replacement value for one nullable field in a `copyWith`.
+///
+/// A bare `double? foo` parameter cannot distinguish *"set foo to null"* from
+/// *"the caller did not mention foo"* — both arrive as null. Wrapping the
+/// replacement in a callback makes the distinction structural: the parameter
+/// itself being null means "unmentioned", and `() => null` means "clear it".
+///
+/// Deliberately not Flutter's `ValueGetter`, despite the identical shape: the
+/// models are pure Dart and import no Flutter, and a same-named typedef would
+/// collide the moment a widget file imported both.
+///
+/// It lives here, beside the model that uses it most, rather than in a file of
+/// its own. A file containing nothing but a typedef has no executable lines,
+/// so lcov emits no record for it at all and the coverage-completeness gate
+/// reads it as an untested file -- indistinguishable from one that really is.
+typedef Replace<T> = T Function();
 
 /// Energy and the three macronutrients for one eaten portion.
 ///

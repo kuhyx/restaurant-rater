@@ -2,7 +2,7 @@
 library;
 
 import 'package:meta/meta.dart';
-import 'package:restaurant_rater/models/replace.dart';
+import 'package:restaurant_rater/models/macros.dart';
 
 /// A dish: its name, what it costs, where it sits in the menu, and whether it
 /// has been passed over.

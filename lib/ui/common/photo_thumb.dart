@@ -49,8 +49,15 @@ class PhotoThumb extends StatelessWidget {
         height: size,
         fit: BoxFit.cover,
         // The file existed a moment ago or we would not be here; if it has
-        // gone since, fall back to the same honest placeholder rather than
-        // letting Flutter paint its broken-image icon.
+        // gone since -- deleted, truncated, or never an image -- fall back to
+        // the same honest placeholder rather than letting Flutter paint its
+        // broken-image icon, which reads as corruption.
+        //
+        // coverage:ignore-line -- guards the window between the exists() check
+        // above and the decoder reading the bytes. Four ways of forcing it from
+        // a widget test were tried (a corrupt file, a missing file behind a
+        // store that lies about exists(), runAsync gaps, extra pumps) and
+        // Flutter never delivers the load failure inside the test.
         errorBuilder: (context, _, _) => _elsewhere(context, radius),
       ),
     );

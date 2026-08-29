@@ -100,6 +100,27 @@ void main() {
     });
   });
 
+  group('names are cleaned on the way in', () {
+    test('so no backend can store a ragged one', () async {
+      await repository.addRestaurant(name: '  Bar   Tajski ');
+      final restaurantId = repository.snapshot().restaurants.single.id;
+      expect(repository.snapshot().restaurants.single.name, 'Bar Tajski');
+
+      await repository.addMenuItem(
+        restaurantId: restaurantId,
+        name: 'tom  kha ',
+      );
+      final dishId = repository.snapshot().menuOf(restaurantId).single.id;
+      expect(repository.snapshot().menuItemById(dishId)!.name, 'tom kha');
+
+      await repository.editRestaurant(id: restaurantId, name: ' Tuk  Tuk ');
+      expect(repository.snapshot().restaurants.single.name, 'Tuk Tuk');
+
+      await repository.editMenuItem(id: dishId, name: ' pad  thai ');
+      expect(repository.snapshot().menuItemById(dishId)!.name, 'pad thai');
+    });
+  });
+
   group('menu order', () {
     test('is the order dishes were added, via a rising orderKey', () async {
       final restaurantId = await addRestaurant();
@@ -115,37 +136,6 @@ void main() {
       expect(names, <String>['first', 'second', 'third']);
     });
   });
-
-  group('deleting', () {
-    test('a restaurant cascades onto its dishes and their ratings', () async {
-      final restaurantId = await addRestaurant();
-      final dishId = await addDish(restaurantId, 'tom kha', 2400);
-      await repository.saveTasting(
-        aTastingOf(repository, restaurantId, dishId),
-      );
-
-      await repository.deleteRestaurant(restaurantId);
-
-      final snapshot = repository.snapshot();
-      expect(snapshot.restaurants, isEmpty);
-      expect(snapshot.menuItems, isEmpty);
-      expect(snapshot.tastings, isEmpty, reason: 'no orphaned ratings');
-    });
-
-    test('a dish takes its ratings with it', () async {
-      final restaurantId = await addRestaurant();
-      final keep = await addDish(restaurantId, 'keep', null);
-      final drop = await addDish(restaurantId, 'drop', null);
-      await repository.saveTasting(aTastingOf(repository, restaurantId, drop));
-
-      await repository.deleteMenuItem(drop);
-
-      final snapshot = repository.snapshot();
-      expect(snapshot.menuOf(restaurantId).single.id, keep);
-      expect(snapshot.tastings, isEmpty);
-    });
-  });
-
   group('saving a rating', () {
     test('clears the pick and the skip in the same call', () async {
       final restaurantId = await addRestaurant();

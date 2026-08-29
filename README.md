@@ -27,6 +27,11 @@ never renumbered. That is what makes "the order you typed them" survive two
 devices adding dishes offline: an integer index would collide, and deleting a
 dish would renumber every dish after it.
 
+A skip is a timestamp rather than a counter, for the same class of reason.
+The log merges last-writer-wins, so two devices each skipping a dish would
+converge on a count of 1 instead of 2 and silently lose one. A timestamp
+merges correctly and says more: it re-offers the longest-ago refusal first.
+
 ## Photos do not sync
 
 Ratings, menus, prices, macros and notes sync across devices. **Photo files do
@@ -53,6 +58,20 @@ lib/ui/       one widget per file, grouped by screen
 `test/` mirrors `lib/` one file for one file. There is deliberately no local
 `theme.dart`: theming comes from the shared `design_system` package, so this
 app cannot drift off the common token table.
+
+Two structural notes worth knowing before editing `lib/sync/`:
+
+* **`LogStore.upsert` replaces a record, it does not merge into one.** Merging
+  happens at sync time. Every write in `CrdtRaterRepository` therefore goes
+  through `_upsertMerged`, which carries the stored record's other fields
+  forward at their original clocks. A write that names only the field its
+  intent touches will otherwise delete every field it does not mention — that
+  bug reached the phone once and made every restaurant vanish the moment a
+  pick was committed.
+* **A codec deliberately does not write every field it can read.**
+  `restaurantToRecord` never writes `pending` and `menuItemToRecord` never
+  writes `skippedAt`; only the pick and skip methods own those. That is what
+  stops a rename from stamping a stale value over a peer's fresh one.
 
 ## Commands
 

@@ -3,7 +3,6 @@ library;
 
 import 'package:meta/meta.dart';
 import 'package:restaurant_rater/models/macros.dart';
-import 'package:restaurant_rater/models/replace.dart';
 
 /// The lowest score on each axis.
 const int kMinScore = 0;
