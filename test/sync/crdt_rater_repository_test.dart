@@ -199,6 +199,22 @@ void main() {
     });
   });
 
+  test('deleting a rating leaves the dish untried again', () async {
+    final restaurantId = await addRestaurant();
+    final dishId = await addDish(restaurantId, 'tom kha', 2400);
+    final tasting = aTastingOf(repository, restaurantId, dishId);
+    await repository.saveTasting(tasting);
+
+    await repository.deleteTasting(tasting.id);
+
+    expect(repository.snapshot().tastings, isEmpty);
+    expect(
+      repository.snapshot().menuItemById(dishId),
+      isNotNull,
+      reason: 'the dish stays on the menu',
+    );
+  });
+
   test('newTastingId mints a fresh id each time', () {
     expect(repository.newTastingId(), isNot(repository.newTastingId()));
   });

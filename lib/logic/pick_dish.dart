@@ -126,10 +126,18 @@ bool canSkipToAnother({
 
 /// The dish whose most recent tasting is oldest.
 ///
-/// Only reached when every dish has been rated, so every dish has at least one
-/// tasting; the null guard is for a merge that dropped one, and sorts such a
-/// dish first because "no record of eating it" is the longest wait there is.
+/// Only reached when every dish has been rated, so every dish is guaranteed an
+/// entry in [lastEaten] — `ratedIds` and this map are built from the same list
+/// of tastings, so one cannot contain a dish the other does not.
+///
+/// The `never` fallback below therefore does not fire in practice. It is a
+/// default rather than a null branch precisely because a branch that cannot be
+/// taken is dead code: it would sit uncovered forever, and the next reader
+/// would have to work out from scratch whether it was a real case or an
+/// oversight. "No record of eating it" sorts first, which is the right answer
+/// if it ever does happen.
 MenuItem _longestSinceEaten(List<MenuItem> menu, List<Tasting> tastings) {
+  final never = DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
   final lastEaten = <String, DateTime>{};
   for (final tasting in tastings) {
     final previous = lastEaten[tasting.menuItemId];
@@ -139,15 +147,10 @@ MenuItem _longestSinceEaten(List<MenuItem> menu, List<Tasting> tastings) {
   }
   final ordered = menu.toList()
     ..sort((a, b) {
-      final left = lastEaten[a.id];
-      final right = lastEaten[b.id];
-      if (left == null && right != null) return -1;
-      if (left != null && right == null) return 1;
-      if (left != null && right != null) {
-        final byDate = left.compareTo(right);
-        if (byDate != 0) return byDate;
-      }
-      return byOrderKey(a, b);
+      final byDate = (lastEaten[a.id] ?? never).compareTo(
+        lastEaten[b.id] ?? never,
+      );
+      return byDate != 0 ? byDate : byOrderKey(a, b);
     });
   return ordered.first;
 }

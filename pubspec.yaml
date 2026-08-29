@@ -54,6 +54,12 @@ dev_dependencies:
   flutter_launcher_icons: 0.14.4
   flutter_test:
     sdk: flutter
+  # These three only exist so test/run_rater_test.dart can answer the platform
+  # channels runRater() reaches, and cover the startup path by RUNNING it
+  # rather than exempting it from the report.
+  path_provider_platform_interface: 2.1.3
+  plugin_platform_interface: 2.1.8
+  shared_preferences: 2.5.5
   # Carets are allowed here only because very_good_analysis is SDK-coupled;
   # the freshness gate still checks the range floor against latest.
   very_good_analysis: ^10.3.0

@@ -16,6 +16,7 @@ import 'package:restaurant_rater/ui/pick/pick_screen.dart';
 import 'package:restaurant_rater/ui/restaurants/restaurant_editor.dart';
 import 'package:restaurant_rater/ui/restaurants/restaurant_tile.dart';
 import 'package:restaurant_rater/ui/settings/settings_screen.dart';
+import 'package:restaurant_rater/ui/settings/sync_actions.dart';
 
 /// The restaurants list.
 class RestaurantsScreen extends StatelessWidget {
@@ -24,6 +25,8 @@ class RestaurantsScreen extends StatelessWidget {
     required this.repository,
     required this.photos,
     required this.sync,
+    this.syncProbe = probeSyncSession,
+    this.syncConnect = connectSyncAccount,
     super.key,
   });
 
@@ -35,6 +38,12 @@ class RestaurantsScreen extends StatelessWidget {
 
   /// Runs one sync tick.
   final Future<SyncOutcome> Function() sync;
+
+  /// Reports whether this device holds a sync session. Injected in tests.
+  final SyncProbe syncProbe;
+
+  /// Performs the interactive sign-in. Injected in tests.
+  final SyncConnect syncConnect;
 
   Future<void> _add(BuildContext context) async {
     final draft = await editRestaurantDialog(context);
@@ -89,7 +98,12 @@ class RestaurantsScreen extends StatelessWidget {
           tooltip: 'Settings',
           onPressed: () => _openRoute(
             context,
-            SettingsScreen(repository: repository, sync: sync),
+            SettingsScreen(
+              repository: repository,
+              sync: sync,
+              syncProbe: syncProbe,
+              syncConnect: syncConnect,
+            ),
           ),
         ),
       ],

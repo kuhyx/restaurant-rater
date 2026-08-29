@@ -15,6 +15,8 @@ class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
     required this.repository,
     required this.sync,
+    this.syncProbe = probeSyncSession,
+    this.syncConnect = connectSyncAccount,
     super.key,
   });
 
@@ -23,6 +25,17 @@ class SettingsScreen extends StatefulWidget {
 
   /// Runs one push/pull tick.
   final Future<SyncOutcome> Function() sync;
+
+  /// Reports whether this device holds a session.
+  ///
+  /// Injected, with the real implementations as defaults, because both reach
+  /// platform channels `flutter test` has no host for -- and an unanswered
+  /// channel *hangs* the test file rather than failing it, which writes no
+  /// coverage at all for anything else in the run.
+  final SyncProbe syncProbe;
+
+  /// Performs the interactive sign-in.
+  final SyncConnect syncConnect;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -66,7 +79,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(AppSpacing.md),
         children: <Widget>[
           const SectionHeader('Sync'),
-          const SyncActions(),
+          SyncActions(probe: widget.syncProbe, connect: widget.syncConnect),
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Sync now'),

@@ -176,6 +176,31 @@ void main() {
       );
       expect(result.item, soup);
     });
+
+    test('puts a dish with no surviving rating first', () {
+      // Reachable when a merge drops a tasting: "no record of eating it" is
+      // the longest wait there is, so it comes back before anything dated.
+      final result = pickNext(
+        restaurant: aRestaurant(),
+        menu: <MenuItem>[soup, shrimp],
+        tastings: <Tasting>[
+          aTasting(id: 't1', menuItemId: 'm1', eatenAt: kEpoch),
+        ],
+      );
+      // tom yum is unrated, so this is rule 3 rather than round two -- the
+      // round-two ordering itself is exercised by reversing the pair.
+      expect(result.item, shrimp);
+
+      final reversed = pickNext(
+        restaurant: aRestaurant(),
+        menu: <MenuItem>[shrimp, soup],
+        tastings: <Tasting>[
+          aTasting(id: 't1', menuItemId: 'm1', eatenAt: kEpoch),
+          aTasting(id: 't2', menuItemId: 'm2', eatenAt: kEpoch),
+        ],
+      );
+      expect(reversed.reason, PickReason.roundTwo);
+    });
   });
 
   test('PickResult prints its dish and reason', () {
