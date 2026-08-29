@@ -62,7 +62,7 @@ class CrdtRaterRepository implements RaterRepository {
       createdAt: _now().toUtc(),
       note: note,
     );
-    await store.upsert(restaurantToRecord(restaurant, store.nextHlc()));
+    await _upsertMerged(restaurantToRecord(restaurant, store.nextHlc()));
   }
 
   @override
@@ -75,7 +75,7 @@ class CrdtRaterRepository implements RaterRepository {
     if (existing == null) return;
     // includeCleared: an edit that empties the note means it, and the explicit
     // null has to outrank the old value on every peer.
-    await store.upsert(
+    await _upsertMerged(
       restaurantToRecord(
         existing.copyWith(name: name, note: () => note),
         store.nextHlc(),
@@ -108,7 +108,7 @@ class CrdtRaterRepository implements RaterRepository {
       orderKey: at.toStr(),
       priceGrosz: priceGrosz,
     );
-    await store.upsert(menuItemToRecord(item, at));
+    await _upsertMerged(menuItemToRecord(item, at));
   }
 
   @override
@@ -119,7 +119,7 @@ class CrdtRaterRepository implements RaterRepository {
   }) async {
     final existing = _menuItem(id);
     if (existing == null) return;
-    await store.upsert(
+    await _upsertMerged(
       menuItemToRecord(
         existing.copyWith(name: name, priceGrosz: () => priceGrosz),
         store.nextHlc(),
@@ -160,7 +160,7 @@ class CrdtRaterRepository implements RaterRepository {
   @override
   Future<void> saveTasting(Tasting tasting) async {
     final isNew = store.get(recordId(kTastingPrefix, tasting.id)) == null;
-    await store.upsert(
+    await _upsertMerged(
       tastingToRecord(tasting, store.nextHlc(), includeCleared: !isNew),
     );
     // A rated dish is no longer a skipped one; leaving the stamp would make it
@@ -176,43 +176,74 @@ class CrdtRaterRepository implements RaterRepository {
       store.delete(recordId(kTastingPrefix, id));
 
   /// Writes only the pick field, so no other field's clock moves.
-  Future<void> _writePick(String restaurantId, String? menuItemId) async {
-    final id = recordId(kRestaurantPrefix, restaurantId);
-    if (store.get(id) == null) return;
-    await store.upsert(
-      Record(
-        id: id,
-        fields: <String, Field>{kPendingField: (menuItemId, store.nextHlc())},
-      ),
-    );
-  }
+  Future<void> _writePick(String restaurantId, String? menuItemId) =>
+      _writeField(
+        recordId(kRestaurantPrefix, restaurantId),
+        kPendingField,
+        menuItemId,
+      );
 
   /// Writes only the skip field, for the same reason as [_writePick].
-  Future<void> _writeSkip(String menuItemId, DateTime? at) async {
-    final id = recordId(kMenuItemPrefix, menuItemId);
+  Future<void> _writeSkip(String menuItemId, DateTime? at) => _writeField(
+    recordId(kMenuItemPrefix, menuItemId),
+    kSkippedAtField,
+    at?.toUtc().toIso8601String(),
+  );
+
+  /// Restamps a single field on an existing record, leaving the rest alone.
+  Future<void> _writeField(String id, String field, Object? value) async {
     if (store.get(id) == null) return;
-    await store.upsert(
+    await _upsertMerged(
       Record(
         id: id,
-        fields: <String, Field>{
-          kSkippedAtField: (at?.toUtc().toIso8601String(), store.nextHlc()),
-        },
+        fields: <String, Field>{field: (value, store.nextHlc())},
       ),
     );
   }
 
-  Restaurant? _restaurant(String id) => recordToRestaurant(
-    store.get(recordId(kRestaurantPrefix, id)) ?? _absent,
-  );
+  /// Writes [built]'s fields over the stored record's, keeping the rest.
+  ///
+  /// **Every write in this class goes through here, and that is
+  /// load-bearing.** `LogStore.upsert` *replaces* a record rather than merging
+  /// into it — merging happens at sync time, not at write time — so handing it
+  /// a record carrying only the fields one intent touches silently deletes
+  /// every field it does not mention.
+  ///
+  /// That is not a theoretical hazard. The first build on the phone lost each
+  /// restaurant's name the instant the pick screen committed a pick, because
+  /// the pick write named only `pending`; the list went straight to
+  /// "Restaurant is gone". The same shape was waiting in `editRestaurant`
+  /// (whose codec omits `pending`) and `editMenuItem` (which omits
+  /// `skippedAt`) — renaming a dish would have erased its skip.
+  ///
+  /// Carrying the untouched fields forward at their *original* clocks is what
+  /// keeps the intent honest: they have not changed, so they must not outrank
+  /// a peer's concurrent edit to them. Only the fields [built] names get a new
+  /// clock.
+  Future<void> _upsertMerged(Record built) async {
+    final existing = store.get(built.id);
+    await store.upsert(
+      existing == null
+          ? built
+          : Record(
+              id: built.id,
+              fields: <String, Field>{...existing.fields, ...built.fields},
+              deleted: existing.deleted,
+              deletedHlc: existing.deletedHlc,
+            ),
+    );
+  }
 
+  /// The stored restaurant, or null when absent or tombstoned.
+  Restaurant? _restaurant(String id) =>
+      _decode(kRestaurantPrefix, id, recordToRestaurant);
+
+  /// The stored dish, or null when absent or tombstoned.
   MenuItem? _menuItem(String id) =>
-      recordToMenuItem(store.get(recordId(kMenuItemPrefix, id)) ?? _absent);
+      _decode(kMenuItemPrefix, id, recordToMenuItem);
 
-  /// A tombstoned stand-in, so the lookups above decode to null for a missing
-  /// record without each of them needing its own null branch.
-  static const Record _absent = Record(
-    id: '',
-    fields: <String, Field>{},
-    deleted: true,
-  );
+  T? _decode<T>(String prefix, String id, T? Function(Record) decoder) {
+    final record = store.get(recordId(prefix, id));
+    return record == null ? null : decoder(record);
+  }
 }

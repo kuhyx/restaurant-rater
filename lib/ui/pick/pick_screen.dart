@@ -102,27 +102,50 @@ class _PickBody extends StatefulWidget {
 }
 
 class _PickBodyState extends State<_PickBody> {
+  /// The dish the caption below currently describes.
+  String? _shownItemId;
+
+  /// Why that dish was chosen, captured when it was chosen.
+  ///
+  /// Latched rather than recomputed for display, because committing the pick
+  /// changes the answer. The first evaluation on a fresh screen says
+  /// `nextUnrated`; the commit then writes `pending`, the change stream fires,
+  /// and the next evaluation says `sticky` — so the very first thing the user
+  /// ever sees would read "Still on this one" about a dish they had never been
+  /// offered. Latching keeps the caption describing the decision that was
+  /// actually made, while a genuine cold start still reads `sticky` first and
+  /// says so correctly.
+  PickReason? _shownReason;
+
   @override
   void initState() {
     super.initState();
-    _commitIfNeeded();
+    _syncPick();
   }
 
   @override
   void didUpdateWidget(_PickBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _commitIfNeeded();
+    _syncPick();
   }
 
-  /// Persists the offer, unless it is already the committed one.
+  /// Latches the caption and persists the offer, unless already committed.
   ///
-  /// Guarded on inequality because this runs on every rebuild, and a write
-  /// fires the change stream, which rebuilds — an unguarded commit would spin
-  /// forever and push on every turn.
-  void _commitIfNeeded() {
+  /// The commit is guarded on inequality because this runs on every rebuild,
+  /// and a write fires the change stream, which rebuilds — an unguarded commit
+  /// would spin forever and push on every turn.
+  void _syncPick() {
     final result = _pick();
     final item = result.item;
-    if (item == null) return;
+    if (item == null) {
+      _shownItemId = null;
+      _shownReason = null;
+      return;
+    }
+    if (_shownItemId != item.id) {
+      _shownItemId = item.id;
+      _shownReason = result.reason;
+    }
     if (widget.restaurant.pendingItemId == item.id) return;
     unawaited(
       widget.repository.commitPick(
@@ -173,7 +196,7 @@ class _PickBodyState extends State<_PickBody> {
     }
     return ListView(
       children: <Widget>[
-        PickCard(item: item, reason: result.reason),
+        PickCard(item: item, reason: _shownReason ?? result.reason),
         PickActions(
           onRate: () => _rate(item),
           onSkip: () => unawaited(_skip(item)),
