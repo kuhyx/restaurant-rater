@@ -102,6 +102,37 @@ product flavors, so the artefact is `app-release.apk` and `phone_deploy.sh`
 correctly omits `--flavor` when the file is absent. `.versioncode-offset` is
 `0` and should stay there; it is a recovery valve, not a knob.
 
+## Sync setup (one manual step)
+
+Sync signs in with Google. An Android OAuth client is keyed to *package name +
+signing SHA-1*, and Google exposes no API to create one — `gcloud` has no
+command and neither does the Firebase CLI. So this package needs its own
+client registered by hand, once:
+
+```bash
+scripts/register_oauth_client.sh          # opens the console, feeds each field
+scripts/register_oauth_client.sh --verify-only
+```
+
+The script derives the SHA-1 from the keystore rather than from a note, opens
+the right console page, and puts each field on the clipboard in form order, so
+nothing has to be retyped. Afterwards it reads the tile back off the device,
+which asks the keystore rather than trusting a local flag.
+
+**Until that is done, Connect fails** — and the symptom is misleading. Android
+reports `canceled: account reauth failed`, which names the account, while
+`adb logcat` shows the real cause:
+
+```
+Auth.Api.Credentials: colz: [8] Unknown error [status=UNREGISTERED_ON_API_CONSOLE].
+```
+
+When picking the account, pick **321krzychu@gmail.com**. The database rules
+pin that uid; any other account signs in fine and is then denied every read
+and write, so the data layer looks broken while the auth layer looks perfect.
+
+## Focus mode
+
 `com.kuhy.restaurant_rater` is listed in the `~/phone-focus-mode` day
 whitelists. The `com.kuhy` prefix already covers it, so the listing is
 inventory rather than enforcement — but an app outside both would be hidden on
