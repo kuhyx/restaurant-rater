@@ -89,6 +89,43 @@ checks that every file under `lib/` actually appears in the report — a file no
 test imports is absent from lcov rather than reported at 0%, so a percentage
 gate alone would fail open.
 
+## Importing a menu
+
+Typing a menu in at the table is the slow part. Instead: photograph the menu,
+send the photos to Claude with the prompt the app hands you, and paste the JSON
+back. **Import menu** is on the Restaurants app bar and in Settings.
+
+```json
+{
+  "restaurant": { "name": "Pho Bar", "note": "Krupnicza 12" },
+  "dishes": [
+    { "name": "tom kha z kurczakiem", "price": "24 zl", "kcal": 380 },
+    { "name": "pad thai z krewetkami", "price": "38,50" }
+  ]
+}
+```
+
+The prompt lives in `lib/logic/menu_import.dart`, beside the parser that has to
+read what it asks for, rather than in a note somewhere — the two cannot drift
+apart if changing one means opening the file that holds the other.
+
+Parsing is deliberately forgiving, because the input is model output pasted by
+hand and one odd field must cost that field and nothing more. A ``` fence is
+stripped; `priceGrosz` beats `price`; a price arriving as the number `24.5`
+rather than the printed `"24,50"` is taken rather than dropped, because models
+emit it that way however plainly the prompt asks otherwise. Everything the
+parse could not use shows up as a warning in the preview, so a menu never comes
+out short with nothing on screen having said so. Nothing is written until
+Import is pressed.
+
+Import is **additive**. Pick an existing restaurant and it appends: a dish
+already on the menu is skipped, keeping its price, its macros and its ratings.
+So re-importing a menu after the place added two dishes adds two dishes.
+
+Macros on a dish are what the *menu* claimed, not what you ate. The rating
+screen pre-fills them exactly as it already pre-fills the price, and they stay
+editable — a tasting records what you decided.
+
 ## Deploying to the phone
 
 ```bash

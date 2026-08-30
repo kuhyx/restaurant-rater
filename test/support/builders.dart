@@ -31,6 +31,7 @@ MenuItem aMenuItem({
   String name = 'tom kha z kurczakiem',
   String? orderKey,
   int? priceGrosz = 2400,
+  Macros macros = Macros.empty,
   DateTime? skippedAt,
 }) => MenuItem(
   id: id,
@@ -38,6 +39,7 @@ MenuItem aMenuItem({
   name: name,
   orderKey: orderKey ?? id,
   priceGrosz: priceGrosz,
+  macros: macros,
   skippedAt: skippedAt,
 );
 

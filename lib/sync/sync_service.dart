@@ -77,6 +77,31 @@ Future<SyncOutcome> syncNow({
     commitMessage: 'restaurant-rater sync',
     stateStore: stateStore,
   );
-  await store.replaceAll(merged);
+  // Re-merged against the log as it is NOW, not as it was before the
+  // round-trip. `syncLog` computed [merged] from a snapshot taken before any
+  // network I/O, so a local write that landed while the request was in flight
+  // is not in it — and replacing outright would erase that write with no
+  // trace.
+  //
+  // That is not hypothetical: importing a menu writes one record per dish, so
+  // a paste lands a burst of writes straight into the window a tick triggered
+  // by the previous write is already sitting in. It cost a dish on the phone
+  // before this line existed.
+  //
+  // Safe because `mergeLogs` is commutative and idempotent: re-merging the
+  // local side back in cannot resurrect a tombstone or lose a remote edit.
+  final settled = mergeLogs(store.snapshot(), merged);
+
+  // Written back only when it actually differs, and that is load-bearing:
+  // `LogStore.replaceAll` persists, persisting fires `changes`, and `changes`
+  // is what schedules the next tick. An unconditional write-back therefore
+  // schedules a tick that writes back that schedules a tick — a sync loop that
+  // never settles, one network round-trip per turn, for as long as the app is
+  // open. Comparing the encoded form rather than the maps because `Log` is a
+  // plain Map and `==` on it is identity; this is the same text the transport
+  // sends, so equal text is an equal log.
+  if (logToJson(settled) != logToJson(store.snapshot())) {
+    await store.replaceAll(settled);
+  }
   return SyncOutcome.synced;
 }

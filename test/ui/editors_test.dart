@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:restaurant_rater/models/macros.dart';
 import 'package:restaurant_rater/ui/menu/menu_item_editor.dart';
 import 'package:restaurant_rater/ui/restaurants/restaurant_editor.dart';
 
@@ -133,6 +134,59 @@ void main() {
       );
       final price = tester.widget<TextField>(find.byType(TextField).at(1));
       expect(price.controller!.text, isEmpty);
+    });
+  });
+
+  group('menu item macros', () {
+    testWidgets('shows what the menu claimed, whole numbers without a .0', (
+      tester,
+    ) async {
+      await viaButton<MenuItemDraft>(
+        tester,
+        (context) => editMenuItemDialog(
+          context,
+          existing: aMenuItem(
+            macros: const Macros(kcal: 380, proteinG: 21.5),
+          ),
+        ),
+      );
+
+      expect(find.widgetWithText(TextField, '380'), findsOneWidget);
+      expect(find.widgetWithText(TextField, '21.5'), findsOneWidget);
+      // Unrecorded is blank, not zero: they are different claims.
+      expect(find.widgetWithText(TextField, '0'), findsNothing);
+    });
+
+    testWidgets('hands the typed macros back with the draft', (tester) async {
+      final draft = await viaButton<MenuItemDraft>(
+        tester,
+        (context) => editMenuItemDialog(context),
+      );
+
+      expect(draft, isNull, reason: 'dismissed without typing anything');
+    });
+
+    testWidgets('saves the macros typed into the dialog', (tester) async {
+      MenuItemDraft? draft;
+      await pumpScreen(
+        tester,
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () async => draft = await editMenuItemDialog(context),
+            child: const Text('open'),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.widgetWithText(TextField, 'Dish'), 'zupa');
+      await tester.enterText(find.widgetWithText(TextField, 'Energy'), '420');
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(draft?.name, 'zupa');
+      expect(draft?.macros.kcal, 420);
     });
   });
 }

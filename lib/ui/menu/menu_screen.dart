@@ -33,6 +33,7 @@ class MenuScreen extends StatelessWidget {
       restaurantId: restaurantId,
       name: draft.name,
       priceGrosz: draft.priceGrosz,
+      macros: draft.macros,
     );
   }
 
@@ -43,6 +44,7 @@ class MenuScreen extends StatelessWidget {
       id: item.id,
       name: draft.name,
       priceGrosz: draft.priceGrosz,
+      macros: draft.macros,
     );
   }
 

@@ -4,6 +4,13 @@ library;
 import 'package:meta/meta.dart';
 import 'package:restaurant_rater/models/macros.dart';
 
+/// One dish as an importer or an editor hands it over, before it has an id.
+///
+/// A record rather than a `MenuItem`, because the three app-minted fields —
+/// `id`, `restaurantId` and `orderKey` — are the repository's to mint and must
+/// not be forgeable by a caller. Declared here, beside the model it becomes.
+typedef MenuDraft = ({String name, int? priceGrosz, Macros macros});
+
 /// A dish: its name, what it costs, where it sits in the menu, and whether it
 /// has been passed over.
 @immutable
@@ -15,6 +22,7 @@ class MenuItem {
     required this.name,
     required this.orderKey,
     this.priceGrosz,
+    this.macros = Macros.empty,
     this.skippedAt,
   });
 
@@ -48,6 +56,14 @@ class MenuItem {
   /// and starts reading as an edit on every sync tick.
   final int? priceGrosz;
 
+  /// What the *menu* claims this dish contains, when it printed it.
+  ///
+  /// A claim, not an observation: these are the figures on the board, typed in
+  /// or imported from a photo of it. The rating screen pre-fills from them and
+  /// lets you overwrite, exactly as it already does with the price — so a
+  /// tasting records what you decided, and this records what was advertised.
+  final Macros macros;
+
   /// When this dish was last passed over, or null if it never was.
   ///
   /// A timestamp rather than a skip *counter*, because the log merges
@@ -67,6 +83,7 @@ class MenuItem {
     String? name,
     String? orderKey,
     Replace<int?>? priceGrosz,
+    Macros? macros,
     Replace<DateTime?>? skippedAt,
   }) => MenuItem(
     id: id,
@@ -74,6 +91,7 @@ class MenuItem {
     name: name ?? this.name,
     orderKey: orderKey ?? this.orderKey,
     priceGrosz: priceGrosz == null ? this.priceGrosz : priceGrosz(),
+    macros: macros ?? this.macros,
     skippedAt: skippedAt == null ? this.skippedAt : skippedAt(),
   );
 
@@ -88,9 +106,17 @@ class MenuItem {
       other.name == name &&
       other.orderKey == orderKey &&
       other.priceGrosz == priceGrosz &&
+      other.macros == macros &&
       other.skippedAt == skippedAt;
 
   @override
-  int get hashCode =>
-      Object.hash(id, restaurantId, name, orderKey, priceGrosz, skippedAt);
+  int get hashCode => Object.hash(
+    id,
+    restaurantId,
+    name,
+    orderKey,
+    priceGrosz,
+    macros,
+    skippedAt,
+  );
 }

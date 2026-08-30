@@ -56,10 +56,20 @@ class _RatingScreenState extends State<RatingScreen> {
       null => '',
     },
   );
-  final TextEditingController _kcal = TextEditingController();
-  final TextEditingController _protein = TextEditingController();
-  final TextEditingController _fat = TextEditingController();
-  final TextEditingController _carbs = TextEditingController();
+  // Pre-filled from what the menu claimed, exactly as _price above is, and
+  // just as editable: this is a starting point to correct, not a reading.
+  late final TextEditingController _kcal = MacrosFields.controllerFor(
+    widget.item.macros.kcal,
+  );
+  late final TextEditingController _protein = MacrosFields.controllerFor(
+    widget.item.macros.proteinG,
+  );
+  late final TextEditingController _fat = MacrosFields.controllerFor(
+    widget.item.macros.fatG,
+  );
+  late final TextEditingController _carbs = MacrosFields.controllerFor(
+    widget.item.macros.carbsG,
+  );
 
   int _taste = 5;
   int _smell = 5;

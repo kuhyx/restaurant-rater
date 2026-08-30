@@ -3,6 +3,7 @@ library;
 
 import 'package:crdt_sync/crdt_sync.dart';
 import 'package:restaurant_rater/data/rater_repository.dart';
+import 'package:restaurant_rater/models/macros.dart';
 import 'package:restaurant_rater/models/menu_item.dart';
 import 'package:restaurant_rater/models/rater_snapshot.dart';
 import 'package:restaurant_rater/models/restaurant.dart';
@@ -11,6 +12,7 @@ import 'package:restaurant_rater/sync/cascade_delete.dart';
 import 'package:restaurant_rater/sync/log_queries.dart';
 import 'package:restaurant_rater/sync/menu_item_codec.dart';
 import 'package:restaurant_rater/sync/record_ids.dart';
+import 'package:restaurant_rater/sync/record_writer.dart';
 import 'package:restaurant_rater/sync/restaurant_codec.dart';
 import 'package:restaurant_rater/sync/tasting_codec.dart';
 import 'package:uuid/uuid.dart';
@@ -35,7 +37,8 @@ class CrdtRaterRepository implements RaterRepository {
     required this.store,
     this.uuid = const Uuid(),
     DateTime Function()? now,
-  }) : _now = now ?? DateTime.now;
+  }) : _now = now ?? DateTime.now,
+       _write = RecordWriter(store);
 
   /// The local CRDT log this repository reads and writes.
   final LogStore store;
@@ -44,6 +47,9 @@ class CrdtRaterRepository implements RaterRepository {
   final Uuid uuid;
 
   final DateTime Function() _now;
+
+  /// The single seam every write passes through. See [RecordWriter].
+  final RecordWriter _write;
 
   @override
   Stream<void> get changes => store.changes;
@@ -62,7 +68,7 @@ class CrdtRaterRepository implements RaterRepository {
       createdAt: _now().toUtc(),
       note: note,
     );
-    await _upsertMerged(restaurantToRecord(restaurant, store.nextHlc()));
+    await _write.upsertMerged(restaurantToRecord(restaurant, store.nextHlc()));
   }
 
   @override
@@ -71,11 +77,11 @@ class CrdtRaterRepository implements RaterRepository {
     required String name,
     String? note,
   }) async {
-    final existing = _restaurant(id);
+    final existing = _write.restaurant(id);
     if (existing == null) return;
     // includeCleared: an edit that empties the note means it, and the explicit
     // null has to outrank the old value on every peer.
-    await _upsertMerged(
+    await _write.upsertMerged(
       restaurantToRecord(
         existing.copyWith(name: cleanName(name), note: () => note),
         store.nextHlc(),
@@ -96,19 +102,61 @@ class CrdtRaterRepository implements RaterRepository {
     required String restaurantId,
     required String name,
     int? priceGrosz,
-  }) async {
+    Macros macros = Macros.empty,
+  }) => _appendDish(
+    restaurantId,
+    (name: name, priceGrosz: priceGrosz, macros: macros),
+  );
+
+  /// Writes one dish onto the end of [restaurantId]'s menu.
+  ///
+  /// The menu position IS the clock this write is stamped at, so "the order I
+  /// typed them in" needs no separate counter and cannot collide across
+  /// devices. An import therefore has to await its dishes one at a time, in
+  /// array order, for the keys to ascend the way the menu prints them.
+  Future<void> _appendDish(String restaurantId, MenuDraft draft) async {
     final at = store.nextHlc();
     final item = MenuItem(
       id: uuid.v4(),
       restaurantId: restaurantId,
-      name: cleanName(name),
-      // The menu position IS the clock this write is stamped at, so "the order
-      // I typed them in" needs no separate counter and cannot collide across
-      // devices.
+      name: cleanName(draft.name),
       orderKey: at.toStr(),
-      priceGrosz: priceGrosz,
+      priceGrosz: draft.priceGrosz,
+      macros: draft.macros,
     );
-    await _upsertMerged(menuItemToRecord(item, at));
+    await _write.upsertMerged(menuItemToRecord(item, at));
+  }
+
+  @override
+  Future<void> importMenu({
+    required String restaurantName,
+    required List<MenuDraft> dishes,
+    String? restaurantNote,
+    String? intoRestaurantId,
+  }) async {
+    var restaurantId = intoRestaurantId;
+    if (restaurantId == null) {
+      restaurantId = uuid.v4();
+      await _write.upsertMerged(
+        restaurantToRecord(
+          Restaurant(
+            id: restaurantId,
+            name: cleanName(restaurantName),
+            createdAt: _now().toUtc(),
+            note: restaurantNote,
+          ),
+          store.nextHlc(),
+        ),
+      );
+    } else if (_write.restaurant(restaurantId) == null) {
+      // The target was deleted on another device between opening the import
+      // screen and pressing the button. Writing the dishes anyway would leave
+      // orphans that `snapshotOf` filters out and nobody could ever see.
+      return;
+    }
+    for (final dish in dishes) {
+      await _appendDish(restaurantId, dish);
+    }
   }
 
   @override
@@ -116,12 +164,17 @@ class CrdtRaterRepository implements RaterRepository {
     required String id,
     required String name,
     int? priceGrosz,
+    Macros macros = Macros.empty,
   }) async {
-    final existing = _menuItem(id);
+    final existing = _write.menuItem(id);
     if (existing == null) return;
-    await _upsertMerged(
+    await _write.upsertMerged(
       menuItemToRecord(
-        existing.copyWith(name: cleanName(name), priceGrosz: () => priceGrosz),
+        existing.copyWith(
+          name: cleanName(name),
+          priceGrosz: () => priceGrosz,
+          macros: macros,
+        ),
         store.nextHlc(),
         includeCleared: true,
       ),
@@ -139,111 +192,40 @@ class CrdtRaterRepository implements RaterRepository {
   Future<void> commitPick({
     required String restaurantId,
     required String menuItemId,
-  }) => _writePick(restaurantId, menuItemId);
+  }) => _write.writePick(restaurantId, menuItemId);
 
   @override
-  Future<void> clearPick(String restaurantId) => _writePick(restaurantId, null);
+  Future<void> clearPick(String restaurantId) =>
+      _write.writePick(restaurantId, null);
 
   @override
   Future<void> skipMenuItem({
     required String menuItemId,
     required DateTime at,
   }) async {
-    final item = _menuItem(menuItemId);
+    final item = _write.menuItem(menuItemId);
     if (item == null) return;
-    await _writeSkip(menuItemId, at);
+    await _write.writeSkip(menuItemId, at);
     // Clearing the pick is half of what a skip means: leave it committed and
     // the sticky rule would hand back the very dish just refused.
-    await _writePick(item.restaurantId, null);
+    await _write.writePick(item.restaurantId, null);
   }
 
   @override
   Future<void> saveTasting(Tasting tasting) async {
     final isNew = store.get(recordId(kTastingPrefix, tasting.id)) == null;
-    await _upsertMerged(
+    await _write.upsertMerged(
       tastingToRecord(tasting, store.nextHlc(), includeCleared: !isNew),
     );
     // A rated dish is no longer a skipped one; leaving the stamp would make it
     // sort oddly in round two for no reason the user could see.
-    if (_menuItem(tasting.menuItemId)?.isSkipped ?? false) {
-      await _writeSkip(tasting.menuItemId, null);
+    if (_write.menuItem(tasting.menuItemId)?.isSkipped ?? false) {
+      await _write.writeSkip(tasting.menuItemId, null);
     }
-    await _writePick(tasting.restaurantId, null);
+    await _write.writePick(tasting.restaurantId, null);
   }
 
   @override
   Future<void> deleteTasting(String id) =>
       store.delete(recordId(kTastingPrefix, id));
-
-  /// Writes only the pick field, so no other field's clock moves.
-  Future<void> _writePick(String restaurantId, String? menuItemId) =>
-      _writeField(
-        recordId(kRestaurantPrefix, restaurantId),
-        kPendingField,
-        menuItemId,
-      );
-
-  /// Writes only the skip field, for the same reason as [_writePick].
-  Future<void> _writeSkip(String menuItemId, DateTime? at) => _writeField(
-    recordId(kMenuItemPrefix, menuItemId),
-    kSkippedAtField,
-    at?.toUtc().toIso8601String(),
-  );
-
-  /// Restamps a single field on an existing record, leaving the rest alone.
-  Future<void> _writeField(String id, String field, Object? value) async {
-    if (store.get(id) == null) return;
-    await _upsertMerged(
-      Record(
-        id: id,
-        fields: <String, Field>{field: (value, store.nextHlc())},
-      ),
-    );
-  }
-
-  /// Writes [built]'s fields over the stored record's, keeping the rest.
-  ///
-  /// **Every write in this class goes through here, and that is
-  /// load-bearing.** `LogStore.upsert` *replaces* a record rather than merging
-  /// into it — merging happens at sync time, not at write time — so handing it
-  /// a record carrying only the fields one intent touches silently deletes
-  /// every field it does not mention.
-  ///
-  /// That is not a theoretical hazard. The first build on the phone lost each
-  /// restaurant's name the instant the pick screen committed a pick, because
-  /// the pick write named only `pending`; the list went straight to
-  /// "Restaurant is gone". The same shape was waiting in `editRestaurant`
-  /// (whose codec omits `pending`) and `editMenuItem` (which omits
-  /// `skippedAt`) — renaming a dish would have erased its skip.
-  ///
-  /// Carrying the untouched fields forward at their *original* clocks is what
-  /// keeps the intent honest: they have not changed, so they must not outrank
-  /// a peer's concurrent edit to them. Only the fields [built] names get a new
-  /// clock.
-  Future<void> _upsertMerged(Record built) async {
-    final existing = store.get(built.id);
-    await store.upsert(
-      existing == null
-          ? built
-          : Record(
-              id: built.id,
-              fields: <String, Field>{...existing.fields, ...built.fields},
-              deleted: existing.deleted,
-              deletedHlc: existing.deletedHlc,
-            ),
-    );
-  }
-
-  /// The stored restaurant, or null when absent or tombstoned.
-  Restaurant? _restaurant(String id) =>
-      _decode(kRestaurantPrefix, id, recordToRestaurant);
-
-  /// The stored dish, or null when absent or tombstoned.
-  MenuItem? _menuItem(String id) =>
-      _decode(kMenuItemPrefix, id, recordToMenuItem);
-
-  T? _decode<T>(String prefix, String id, T? Function(Record) decoder) {
-    final record = store.get(recordId(prefix, id));
-    return record == null ? null : decoder(record);
-  }
 }

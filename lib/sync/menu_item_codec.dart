@@ -3,6 +3,7 @@ library;
 
 import 'package:crdt_sync/crdt_sync.dart';
 import 'package:restaurant_rater/models/menu_item.dart';
+import 'package:restaurant_rater/sync/record_fields.dart';
 import 'package:restaurant_rater/sync/record_ids.dart';
 
 /// The field holding the owning restaurant's bare id.
@@ -27,7 +28,12 @@ const String kSkippedAtField = 'skippedAt';
 /// clear that follows a rating own that field. Correcting a typo in a dish
 /// name must not be able to resurrect or erase a skip recorded elsewhere.
 ///
-/// [kOrderKeyField] *is* written, but the value passed in is the one the item
+/// The macros, by contrast, *are* written here. They are an ordinary editable
+/// property of a dish, like the price: the dish dialog shows them, so what the
+/// user submits is what they saw, and an edit clearing one means it. A dish
+/// macro that no intent wrote would be unfixable once imported wrong.
+///
+/// [kOrderKeyField] is written, but the value passed in is the one the item
 /// was created with — it is never recomputed, so a rename cannot reorder the
 /// menu.
 Record menuItemToRecord(
@@ -40,10 +46,13 @@ Record menuItemToRecord(
     kRestaurantField: (item.restaurantId, at),
     kItemNameField: (item.name, at),
     kOrderKeyField: (item.orderKey, at),
-    if (item.priceGrosz != null)
-      kPriceField: (item.priceGrosz, at)
-    else if (includeCleared)
-      kPriceField: (null, at),
+    ...optionalField(
+      kPriceField,
+      item.priceGrosz,
+      at,
+      includeCleared: includeCleared,
+    ),
+    ...macrosToFields(item.macros, at, includeCleared: includeCleared),
   },
 );
 
@@ -75,6 +84,7 @@ MenuItem? recordToMenuItem(Record record) {
     // `is int` rather than `is num`: a price is grosz and must never arrive as
     // a double, which is exactly the drift this catches instead of rounding.
     priceGrosz: price is int ? price : null,
+    macros: macrosFromFields(record.fields),
     skippedAt: skippedAt is String
         ? DateTime.tryParse(skippedAt)?.toUtc()
         : null,

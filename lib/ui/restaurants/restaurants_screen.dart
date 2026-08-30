@@ -11,6 +11,7 @@ import 'package:restaurant_rater/photos/photo_store.dart';
 import 'package:restaurant_rater/sync/sync_service.dart';
 import 'package:restaurant_rater/ui/common/rater_scope.dart';
 import 'package:restaurant_rater/ui/history/history_screen.dart';
+import 'package:restaurant_rater/ui/import/import_screen.dart';
 import 'package:restaurant_rater/ui/menu/menu_screen.dart';
 import 'package:restaurant_rater/ui/pick/pick_screen.dart';
 import 'package:restaurant_rater/ui/restaurants/restaurant_editor.dart';
@@ -92,6 +93,12 @@ class RestaurantsScreen extends StatelessWidget {
             context,
             HistoryScreen(repository: repository, photos: photos),
           ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.content_paste_go),
+          tooltip: 'Import menu',
+          onPressed: () =>
+              _openRoute(context, ImportScreen(repository: repository)),
         ),
         IconButton(
           icon: const Icon(Icons.settings),

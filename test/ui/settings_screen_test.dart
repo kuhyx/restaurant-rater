@@ -8,6 +8,7 @@ import 'package:restaurant_rater/models/restaurant.dart';
 import 'package:restaurant_rater/models/tasting.dart';
 import 'package:restaurant_rater/sync/sync_service.dart';
 import 'package:restaurant_rater/ui/settings/google_sign_in_result.dart';
+import 'package:restaurant_rater/ui/import/import_screen.dart';
 import 'package:restaurant_rater/ui/settings/settings_screen.dart';
 
 import '../support/builders.dart';
@@ -44,6 +45,12 @@ void main() {
   testWidgets('counts what this device holds', (tester) async {
     await open(tester, sync: () async => SyncOutcome.synced);
     await tester.pumpAndSettle();
+    // Scrolled to: the counts sit at the foot of the list, below every
+    // section, and a ListView does not build what is off-screen.
+    await tester.scrollUntilVisible(
+      find.text('1 restaurants, 1 dishes, 1 ratings'),
+      100,
+    );
     expect(find.text('1 restaurants, 1 dishes, 1 ratings'), findsOneWidget);
   });
 
@@ -126,5 +133,15 @@ void main() {
       find.text('Photos stay on the device that took them'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('offers the menu importer', (tester) async {
+    await open(tester, sync: () async => SyncOutcome.synced);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Import a menu'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ImportScreen), findsOneWidget);
   });
 }

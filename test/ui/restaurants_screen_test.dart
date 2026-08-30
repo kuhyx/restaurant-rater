@@ -8,6 +8,7 @@ import 'package:restaurant_rater/models/restaurant.dart';
 import 'package:restaurant_rater/models/tasting.dart';
 import 'package:restaurant_rater/sync/sync_service.dart';
 import 'package:restaurant_rater/ui/settings/google_sign_in_result.dart';
+import 'package:restaurant_rater/ui/import/import_screen.dart';
 import 'package:restaurant_rater/ui/restaurants/restaurants_screen.dart';
 
 import '../support/builders.dart';
@@ -152,5 +153,14 @@ void main() {
     await tester.tap(find.byIcon(Icons.settings));
     await tester.pumpAndSettle();
     expect(find.text('Sync now'), findsOneWidget);
+  });
+
+  testWidgets('the app bar opens the menu importer', (tester) async {
+    await open(tester);
+
+    await tester.tap(find.byTooltip('Import menu'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ImportScreen), findsOneWidget);
   });
 }

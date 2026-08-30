@@ -31,6 +31,20 @@ class MacrosFields extends StatelessWidget {
   /// Carbohydrate, in grams.
   final TextEditingController carbs;
 
+  /// A controller holding [value] with no trailing `.0` on a whole number.
+  ///
+  /// A menu prints `380 kcal`, not `380.0 kcal`, and so did whoever typed it
+  /// in. Shared with the dish editor so the two screens cannot disagree about
+  /// how the same number looks.
+  static TextEditingController controllerFor(double? value) =>
+      TextEditingController(
+        text: switch (value) {
+          null => '',
+          final double v when v == v.roundToDouble() => '${v.round()}',
+          final double v => '$v',
+        },
+      );
+
   /// Reads the four controllers into a [Macros].
   ///
   /// A blank or unparseable field becomes null — "unknown", which is a

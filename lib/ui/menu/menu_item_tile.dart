@@ -33,12 +33,16 @@ class MenuItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final price = item.priceGrosz;
+    final kcal = item.macros.kcal;
     final mean = score;
     return ListTile(
       title: Text(item.name),
       subtitle: Text(
         <String>[
           if (price != null) formatPln(price),
+          // The menu's claim, shown here so a dish you have not eaten yet
+          // still says what it costs you.
+          if (kcal != null) '${kcal.round()} kcal',
           if (mean == null) 'not tried yet',
           // Only worth saying while it is still unrated — a skip on a dish you
           // have since eaten is history, not a state.

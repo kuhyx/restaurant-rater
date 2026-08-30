@@ -7,6 +7,7 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:restaurant_rater/data/rater_repository.dart';
 import 'package:restaurant_rater/sync/sync_service.dart';
+import 'package:restaurant_rater/ui/import/import_screen.dart';
 import 'package:restaurant_rater/ui/settings/sync_actions.dart';
 
 /// Connecting this device, and running a sync on demand.
@@ -94,6 +95,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   )
                 : const Icon(Icons.sync),
             onTap: _syncing ? null : () => unawaited(_syncNow()),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          const SectionHeader('Menus'),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Import a menu'),
+            subtitle: const Text(
+              'Photograph a menu, have Claude turn it into JSON, paste it '
+              'here.',
+            ),
+            trailing: const Icon(Icons.content_paste_go),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => ImportScreen(repository: widget.repository),
+              ),
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           const SectionHeader('Photos'),

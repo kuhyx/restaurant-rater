@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:restaurant_rater/models/macros.dart';
 import 'package:restaurant_rater/models/menu_item.dart';
 import 'package:restaurant_rater/models/restaurant.dart';
 import 'package:restaurant_rater/models/tasting.dart';
@@ -154,5 +155,17 @@ void main() {
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(repository.calls, isEmpty);
+  });
+
+  testWidgets('a dish shows what the menu claimed it contains', (
+    tester,
+  ) async {
+    repository = FakeRaterRepository(
+      restaurants: <Restaurant>[aRestaurant()],
+      menuItems: <MenuItem>[aMenuItem(macros: const Macros(kcal: 380.4))],
+    );
+    await open(tester);
+
+    expect(find.textContaining('380 kcal'), findsOneWidget);
   });
 }

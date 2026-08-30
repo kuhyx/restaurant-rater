@@ -4,6 +4,7 @@ library;
 import 'dart:async';
 
 import 'package:restaurant_rater/data/rater_repository.dart';
+import 'package:restaurant_rater/models/macros.dart';
 import 'package:restaurant_rater/models/menu_item.dart';
 import 'package:restaurant_rater/models/rater_snapshot.dart';
 import 'package:restaurant_rater/models/restaurant.dart';
@@ -100,17 +101,57 @@ class FakeRaterRepository implements RaterRepository {
     required String restaurantId,
     required String name,
     int? priceGrosz,
+    Macros macros = Macros.empty,
   }) async {
     calls.add('addMenuItem:$restaurantId/$name/$priceGrosz');
+    _appendDish(restaurantId, (
+      name: name,
+      priceGrosz: priceGrosz,
+      macros: macros,
+    ));
+    _notify();
+  }
+
+  void _appendDish(String restaurantId, MenuDraft draft) {
     menuItems.add(
       MenuItem(
         id: 'new-${menuItems.length}',
         restaurantId: restaurantId,
-        name: name,
+        name: draft.name,
         orderKey: 'k${menuItems.length}',
-        priceGrosz: priceGrosz,
+        priceGrosz: draft.priceGrosz,
+        macros: draft.macros,
       ),
     );
+  }
+
+  @override
+  Future<void> importMenu({
+    required String restaurantName,
+    required List<MenuDraft> dishes,
+    String? restaurantNote,
+    String? intoRestaurantId,
+  }) async {
+    calls.add(
+      'importMenu:$restaurantName/$intoRestaurantId/${dishes.length}',
+    );
+    var restaurantId = intoRestaurantId;
+    if (restaurantId == null) {
+      restaurantId = 'new-${restaurants.length}';
+      restaurants.add(
+        Restaurant(
+          id: restaurantId,
+          name: restaurantName,
+          createdAt: DateTime.utc(2026),
+          note: restaurantNote,
+        ),
+      );
+    } else if (!restaurants.any((r) => r.id == restaurantId)) {
+      return;
+    }
+    for (final dish in dishes) {
+      _appendDish(restaurantId, dish);
+    }
     _notify();
   }
 
@@ -119,11 +160,16 @@ class FakeRaterRepository implements RaterRepository {
     required String id,
     required String name,
     int? priceGrosz,
+    Macros macros = Macros.empty,
   }) async {
     calls.add('editMenuItem:$id/$name/$priceGrosz');
     _replaceItem(
       id,
-      (item) => item.copyWith(name: name, priceGrosz: () => priceGrosz),
+      (item) => item.copyWith(
+        name: name,
+        priceGrosz: () => priceGrosz,
+        macros: macros,
+      ),
     );
   }
 

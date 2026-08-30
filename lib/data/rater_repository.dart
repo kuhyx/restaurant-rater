@@ -1,6 +1,8 @@
 /// The boundary between the screens and wherever the data actually lives.
 library;
 
+import 'package:restaurant_rater/models/macros.dart';
+import 'package:restaurant_rater/models/menu_item.dart';
 import 'package:restaurant_rater/models/rater_snapshot.dart';
 import 'package:restaurant_rater/models/tasting.dart';
 
@@ -60,13 +62,39 @@ abstract class RaterRepository {
     required String restaurantId,
     required String name,
     int? priceGrosz,
+    Macros macros = Macros.empty,
   });
 
-  /// Edits a dish's name and price. Never touches its order or its skip.
+  /// Edits a dish's name, price and menu-claimed macros. Never touches its
+  /// order or its skip.
   Future<void> editMenuItem({
     required String id,
     required String name,
     int? priceGrosz,
+    Macros macros = Macros.empty,
+  });
+
+  /// Creates or extends a restaurant's menu in one intent.
+  ///
+  /// With [intoRestaurantId] null this mints a restaurant named
+  /// [restaurantName]; otherwise the dishes are appended to that restaurant
+  /// and the name and note are ignored, because an import must not silently
+  /// rename a place you already keep ratings for.
+  ///
+  /// One intent rather than an add plus N appends, for two reasons that are
+  /// both about the caller not being able to get it wrong: [addRestaurant]
+  /// cannot hand back the id a fresh menu would have to attach to, and the
+  /// dishes have to be written strictly in list order for their menu positions
+  /// to come out in the order the menu prints them.
+  ///
+  /// Additive: it never edits or removes a dish that is already there. The
+  /// screen filters out the duplicates before calling, so that "what the
+  /// preview showed" and "what was written" cannot disagree.
+  Future<void> importMenu({
+    required String restaurantName,
+    required List<MenuDraft> dishes,
+    String? restaurantNote,
+    String? intoRestaurantId,
   });
 
   /// Tombstones a dish and its tastings.

@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:restaurant_rater/data/rater_repository.dart';
 import 'package:restaurant_rater/photos/photo_store.dart';
+import 'package:restaurant_rater/sync/coalesced_tick.dart';
 import 'package:restaurant_rater/sync/crdt_rater_repository.dart';
 import 'package:restaurant_rater/sync/sync_service.dart';
 
@@ -87,6 +88,8 @@ Future<SyncedStore> openSyncedStore({
     stateStore: stateStore,
   );
 
+  final pushSoon = CoalescedTick(tick);
+
   final repository = CrdtRaterRepository(store: store);
   final photos = photoStore ?? await PhotoStore.open();
 
@@ -100,9 +103,7 @@ Future<SyncedStore> openSyncedStore({
   // added later. Fire-and-forget, because a rating must land on screen at once
   // and is already durable locally by the time this runs; a failed push is not
   // an error the user has to dismiss.
-  store.changes.listen((_) {
-    unawaited(tick().catchError((_) => SyncOutcome.notConfigured));
-  });
+  store.changes.listen((_) => unawaited(pushSoon()));
 
   return SyncedStore(
     deviceId: me.deviceId,

@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:restaurant_rater/models/macros.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:restaurant_rater/models/menu_item.dart';
@@ -32,7 +33,11 @@ void main() {
 
   tearDown(() => repository.dispose());
 
-  Future<void> open(WidgetTester tester, {PickPhoto? pickPhoto}) {
+  Future<void> open(
+    WidgetTester tester, {
+    PickPhoto? pickPhoto,
+    MenuItem? item,
+  }) {
     // A tall surface so the whole form is built at once. The ListView is lazy,
     // so on the default 800px viewport the note and price fields do not exist
     // in the tree at all and finding them throws rather than failing.
@@ -44,7 +49,7 @@ void main() {
       RatingScreen(
         repository: repository,
         photos: photos,
-        item: aMenuItem(),
+        item: item ?? aMenuItem(),
         pickPhoto: pickPhoto ?? (_) async => null,
       ),
     );
@@ -197,5 +202,20 @@ void main() {
       expect(find.text('Remove'), findsNothing);
       expect(photos.exists('minted-0.jpg'), isFalse);
     });
+  });
+
+  testWidgets("pre-fills the macros the menu claimed, and lets them be "
+      'overwritten', (tester) async {
+    // The same treatment the price already gets: a starting point to correct,
+    // not a reading. Saving copies whatever is in the field at that moment.
+    await open(tester, item: aMenuItem(macros: const Macros(kcal: 380)));
+
+    expect(find.widgetWithText(TextField, '380'), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextField, '380'), '410');
+    await tester.tap(find.text('Save rating'));
+    await tester.pumpAndSettle();
+
+    expect(repository.tastings.single.macros.kcal, 410);
   });
 }

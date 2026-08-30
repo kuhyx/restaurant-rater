@@ -16,11 +16,24 @@ class FakeRemoteStore implements RemoteStore {
   /// Whether [close] has been called.
   bool closed = false;
 
+  /// Runs on the first read, standing in for "something happened while the
+  /// network request was in flight".
+  Future<void> Function()? onRead;
+
+  bool _read = false;
+
   /// Pre-loads a peer's file at [path].
   void seed(String path, String contents) => _files[path] = contents;
 
+  Future<void> _maybeInterleave() async {
+    if (_read) return;
+    _read = true;
+    await onRead?.call();
+  }
+
   @override
   Future<List<String>> listDirectory(String path) async {
+    await _maybeInterleave();
     final prefix = path.endsWith('/') ? path : '$path/';
     return <String>{
       for (final key in _files.keys)
