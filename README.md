@@ -129,7 +129,7 @@ editable — a tasting records what you decided.
 ## Deploying to the phone
 
 ```bash
-~/.claude/scripts/phone_deploy.sh ~/restaurant-rater --release
+~/.claude/scripts/phone_deploy.sh ~/src/restaurant-rater --release
 ```
 
 Never `adb uninstall` or `pm clear` — `install -r` preserves the data.
@@ -170,7 +170,7 @@ and write, so the data layer looks broken while the auth layer looks perfect.
 
 ## Focus mode
 
-`com.kuhy.restaurant_rater` is listed in the `~/phone-focus-mode` day
+`com.kuhy.restaurant_rater` is listed in the `~/src/phone-focus-mode` day
 whitelists. The `com.kuhy` prefix already covers it, so the listing is
 inventory rather than enforcement — but an app outside both would be hidden on
 launch and look exactly like a crash.

@@ -49,7 +49,7 @@ repos:
         pass_filenames: false
         always_run: true
 
-      # These gates are thin delegates to ~/utils, which owns the rules so that
+      # These gates are thin delegates to ~/src/utils, which owns the rules so that
       # one repo's idea of "too long" or "badly named" cannot drift.
       - id: file-length
         name: file length <= 250 lines

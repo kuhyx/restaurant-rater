@@ -68,7 +68,7 @@ flutter:
   uses-material-design: true
 
 # Regenerate the source PNGs with the shared generator, never by hand:
-#   PYTHONPATH=~/testsAndMisc python3 -m python_pkg.app_icons \
+#   PYTHONPATH=~/src/testsAndMisc python3 -m python_pkg.app_icons \
 #     generate --app restaurant_rater
 #   dart run flutter_launcher_icons
 flutter_launcher_icons:
