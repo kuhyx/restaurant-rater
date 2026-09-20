@@ -127,10 +127,7 @@ void main() {
 
     // The exact on-device failure this tile was blind to: Google's own words
     // reach the screen, so the console entry is the obvious next step.
-    expect(
-      find.textContaining('UNREGISTERED_ON_API_CONSOLE'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('UNREGISTERED_ON_API_CONSOLE'), findsOneWidget);
   });
 
   testWidgets('a retry runs the sign-in again', (tester) async {

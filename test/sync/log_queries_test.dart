@@ -56,11 +56,11 @@ void main() {
         restaurantToRecord(aRestaurant(id: 'r3', name: 'alpha'), at),
       ]),
     );
-    expect(
-      snapshot.restaurants.map((r) => r.id),
-      <String>['r1', 'r3', 'r2'],
-      reason: 'Alpha and alpha sit together, not in two runs of the alphabet',
-    );
+    expect(snapshot.restaurants.map((r) => r.id), <String>[
+      'r1',
+      'r3',
+      'r2',
+    ], reason: 'Alpha and alpha sit together, not in two runs of the alphabet');
   });
 
   group('cascade ids', () {
@@ -96,10 +96,7 @@ void main() {
     test('matches ratings through the dish, not the cached restaurant id', () {
       // The tasting's `restaurant` field is a denormalised cache and can be
       // stale; trusting it would strand a rating instead of deleting it.
-      final stale = tastingToRecord(
-        aTasting(restaurantId: 'stale-cache'),
-        at,
-      );
+      final stale = tastingToRecord(aTasting(restaurantId: 'stale-cache'), at);
       final ids = idsToTombstoneForRestaurant(
         logOf(<Record>[restaurant, dish, stale]),
         'r1',
@@ -108,10 +105,7 @@ void main() {
     });
 
     test('a dish takes only its own ratings', () {
-      final other = tastingToRecord(
-        aTasting(id: 't9', menuItemId: 'm9'),
-        at,
-      );
+      final other = tastingToRecord(aTasting(id: 't9', menuItemId: 'm9'), at);
       final ids = idsToTombstoneForMenuItem(
         logOf(<Record>[dish, tasting, other]),
         'm1',

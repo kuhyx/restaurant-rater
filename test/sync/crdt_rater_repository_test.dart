@@ -169,10 +169,7 @@ void main() {
 
       final tastings = repository.snapshot().tastingsOfItem(dishId);
       expect(tastings, hasLength(2));
-      expect(
-        tastings.map((tasting) => tasting.taste).toSet(),
-        <int>{3, 9},
-      );
+      expect(tastings.map((tasting) => tasting.taste).toSet(), <int>{3, 9});
     });
   });
 

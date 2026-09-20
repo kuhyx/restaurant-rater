@@ -153,10 +153,10 @@ void main() {
 
     expect(repository.restaurants.single.name, 'Pho Bar');
     expect(repository.restaurants.single.note, 'Krupnicza 12');
-    expect(
-      repository.menuItems.map((item) => item.name).toList(),
-      <String>['tom kha', 'pad thai'],
-    );
+    expect(repository.menuItems.map((item) => item.name).toList(), <String>[
+      'tom kha',
+      'pad thai',
+    ]);
     expect(repository.menuItems.first.priceGrosz, 2400);
     expect(repository.menuItems.last.macros.kcal, 512);
     expect(find.text('2 dishes added to Pho Bar.'), findsOneWidget);

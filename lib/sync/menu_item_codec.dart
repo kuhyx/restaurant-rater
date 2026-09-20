@@ -36,25 +36,22 @@ const String kSkippedAtField = 'skippedAt';
 /// [kOrderKeyField] is written, but the value passed in is the one the item
 /// was created with — it is never recomputed, so a rename cannot reorder the
 /// menu.
-Record menuItemToRecord(
-  MenuItem item,
-  Hlc at, {
-  bool includeCleared = false,
-}) => Record(
-  id: recordId(kMenuItemPrefix, item.id),
-  fields: <String, Field>{
-    kRestaurantField: (item.restaurantId, at),
-    kItemNameField: (item.name, at),
-    kOrderKeyField: (item.orderKey, at),
-    ...optionalField(
-      kPriceField,
-      item.priceGrosz,
-      at,
-      includeCleared: includeCleared,
-    ),
-    ...macrosToFields(item.macros, at, includeCleared: includeCleared),
-  },
-);
+Record menuItemToRecord(MenuItem item, Hlc at, {bool includeCleared = false}) =>
+    Record(
+      id: recordId(kMenuItemPrefix, item.id),
+      fields: <String, Field>{
+        kRestaurantField: (item.restaurantId, at),
+        kItemNameField: (item.name, at),
+        kOrderKeyField: (item.orderKey, at),
+        ...optionalField(
+          kPriceField,
+          item.priceGrosz,
+          at,
+          includeCleared: includeCleared,
+        ),
+        ...macrosToFields(item.macros, at, includeCleared: includeCleared),
+      },
+    );
 
 /// Rebuilds a menu item from [record], or null when it does not describe one.
 ///

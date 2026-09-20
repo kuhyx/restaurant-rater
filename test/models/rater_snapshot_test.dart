@@ -50,10 +50,10 @@ void main() {
   });
 
   test('tastingsOfItem is newest first', () {
-    expect(
-      snapshot.tastingsOfItem('m1').map((tasting) => tasting.id),
-      <String>['t2', 't1'],
-    );
+    expect(snapshot.tastingsOfItem('m1').map((tasting) => tasting.id), <String>[
+      't2',
+      't1',
+    ]);
   });
 
   test('referencedPhotos names every live photo exactly once', () {

@@ -59,9 +59,7 @@ void main() {
   });
 
   testWidgets('omits the note when there is none', (tester) async {
-    repository = FakeRaterRepository(
-      restaurants: <Restaurant>[aRestaurant()],
-    );
+    repository = FakeRaterRepository(restaurants: <Restaurant>[aRestaurant()]);
     await open(tester);
     expect(find.text('no dishes yet'), findsOneWidget);
   });

@@ -50,11 +50,7 @@ Record tastingToRecord(
     kTasteField: (tasting.taste, at),
     kSmellField: (tasting.smell, at),
     kLooksField: (tasting.looks, at),
-    ...macrosToFields(
-      tasting.macros,
-      at,
-      includeCleared: includeCleared,
-    ),
+    ...macrosToFields(tasting.macros, at, includeCleared: includeCleared),
     ...optionalField(
       kPhotoField,
       tasting.photoName,

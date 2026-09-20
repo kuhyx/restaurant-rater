@@ -24,9 +24,7 @@ void main() {
   );
 
   testWidgets('says what to do with an empty menu', (tester) async {
-    repository = FakeRaterRepository(
-      restaurants: <Restaurant>[aRestaurant()],
-    );
+    repository = FakeRaterRepository(restaurants: <Restaurant>[aRestaurant()]);
     await open(tester);
     expect(find.text('No dishes yet'), findsOneWidget);
     expect(find.text('Bar Tajski'), findsOneWidget);
@@ -47,12 +45,7 @@ void main() {
       restaurants: <Restaurant>[aRestaurant()],
       menuItems: <MenuItem>[
         aMenuItem(id: 'm2', orderKey: 'b', name: 'tom yum', priceGrosz: 2200),
-        aMenuItem(
-          id: 'm1',
-          orderKey: 'a',
-          name: 'tom kha',
-          skippedAt: kEpoch,
-        ),
+        aMenuItem(id: 'm1', orderKey: 'a', name: 'tom kha', skippedAt: kEpoch),
       ],
       tastings: <Tasting>[
         aTasting(menuItemId: 'm2', taste: 3, smell: 6, looks: 6),
@@ -72,9 +65,7 @@ void main() {
   });
 
   testWidgets('adds a dish with a price', (tester) async {
-    repository = FakeRaterRepository(
-      restaurants: <Restaurant>[aRestaurant()],
-    );
+    repository = FakeRaterRepository(restaurants: <Restaurant>[aRestaurant()]);
     await open(tester);
 
     await tester.tap(find.byType(FloatingActionButton));
@@ -89,9 +80,7 @@ void main() {
   });
 
   testWidgets('a blank price means no price, not a zero', (tester) async {
-    repository = FakeRaterRepository(
-      restaurants: <Restaurant>[aRestaurant()],
-    );
+    repository = FakeRaterRepository(restaurants: <Restaurant>[aRestaurant()]);
     await open(tester);
 
     await tester.tap(find.byType(FloatingActionButton));
@@ -145,9 +134,7 @@ void main() {
   });
 
   testWidgets('cancelling the add dialog writes nothing', (tester) async {
-    repository = FakeRaterRepository(
-      restaurants: <Restaurant>[aRestaurant()],
-    );
+    repository = FakeRaterRepository(restaurants: <Restaurant>[aRestaurant()]);
     await open(tester);
 
     await tester.tap(find.byType(FloatingActionButton));
@@ -157,9 +144,7 @@ void main() {
     expect(repository.calls, isEmpty);
   });
 
-  testWidgets('a dish shows what the menu claimed it contains', (
-    tester,
-  ) async {
+  testWidgets('a dish shows what the menu claimed it contains', (tester) async {
     repository = FakeRaterRepository(
       restaurants: <Restaurant>[aRestaurant()],
       menuItems: <MenuItem>[aMenuItem(macros: const Macros(kcal: 380.4))],

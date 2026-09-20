@@ -204,9 +204,6 @@ void main() {
   });
 
   test('PickResult prints its dish and reason', () {
-    expect(
-      pick(menu: <MenuItem>[soup]).toString(),
-      contains('nextUnrated'),
-    );
+    expect(pick(menu: <MenuItem>[soup]).toString(), contains('nextUnrated'));
   });
 }

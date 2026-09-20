@@ -110,10 +110,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.restaurants, hasLength(1));
-    expect(
-      repository.menuItems.map((item) => item.name).toList(),
-      <String>['tom kha', 'pad thai'],
-    );
+    expect(repository.menuItems.map((item) => item.name).toList(), <String>[
+      'tom kha',
+      'pad thai',
+    ]);
     expect(find.text('1 dish added to Pho Bar.'), findsOneWidget);
   });
 

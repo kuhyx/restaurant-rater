@@ -132,9 +132,7 @@ class FakeRaterRepository implements RaterRepository {
     String? restaurantNote,
     String? intoRestaurantId,
   }) async {
-    calls.add(
-      'importMenu:$restaurantName/$intoRestaurantId/${dishes.length}',
-    );
+    calls.add('importMenu:$restaurantName/$intoRestaurantId/${dishes.length}');
     var restaurantId = intoRestaurantId;
     if (restaurantId == null) {
       restaurantId = 'new-${restaurants.length}';

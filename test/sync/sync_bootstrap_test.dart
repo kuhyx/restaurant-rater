@@ -54,9 +54,7 @@ void main() {
   test('hydrates what was on disk before any sync runs', () async {
     // The order is the safety argument: sync before hydrate would push an
     // empty log that a peer merges as a mass deletion.
-    seedLog(<String, Record>{
-      'r:r1': restaurantToRecord(aRestaurant(), at),
-    });
+    seedLog(<String, Record>{'r:r1': restaurantToRecord(aRestaurant(), at)});
 
     final remote = FakeRemoteStore();
     final store = await boot(remote: remote);
@@ -89,9 +87,7 @@ void main() {
     });
 
     test('removes an orphan once the log has something in it', () async {
-      seedLog(<String, Record>{
-        'r:r1': restaurantToRecord(aRestaurant(), at),
-      });
+      seedLog(<String, Record>{'r:r1': restaurantToRecord(aRestaurant(), at)});
       photos.fileFor('orphan.jpg').writeAsBytesSync(<int>[1]);
 
       await boot();

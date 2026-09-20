@@ -114,10 +114,8 @@ void main() {
     testWidgets('pre-fills the price without its unit', (tester) async {
       await viaButton(
         tester,
-        (context) => editMenuItemDialog(
-          context,
-          existing: aMenuItem(priceGrosz: 2450),
-        ),
+        (context) =>
+            editMenuItemDialog(context, existing: aMenuItem(priceGrosz: 2450)),
       );
       expect(find.text('Edit dish'), findsOneWidget);
       final price = tester.widget<TextField>(find.byType(TextField).at(1));
@@ -145,9 +143,7 @@ void main() {
         tester,
         (context) => editMenuItemDialog(
           context,
-          existing: aMenuItem(
-            macros: const Macros(kcal: 380, proteinG: 21.5),
-          ),
+          existing: aMenuItem(macros: const Macros(kcal: 380, proteinG: 21.5)),
         ),
       );
 

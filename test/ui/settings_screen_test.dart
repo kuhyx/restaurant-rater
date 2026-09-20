@@ -95,11 +95,7 @@ void main() {
   testWidgets('shows the connected state read back from the keystore', (
     tester,
   ) async {
-    await open(
-      tester,
-      sync: () async => SyncOutcome.synced,
-      connected: true,
-    );
+    await open(tester, sync: () async => SyncOutcome.synced, connected: true);
     await tester.pumpAndSettle();
     expect(find.text('Sync connected'), findsOneWidget);
     expect(find.byIcon(Icons.cloud_done_outlined), findsOneWidget);

@@ -22,10 +22,10 @@ void main() {
       expect(menu.restaurantName, 'Pho Bar');
       expect(menu.restaurantNote, 'Krupnicza 12');
       expect(menu.warnings, isEmpty);
-      expect(
-        menu.dishes.map((d) => d.name).toList(),
-        <String>['tom kha', 'pad thai'],
-      );
+      expect(menu.dishes.map((d) => d.name).toList(), <String>[
+        'tom kha',
+        'pad thai',
+      ]);
       expect(menu.dishes.first.priceGrosz, 2400);
       expect(menu.dishes.first.macros.kcal, 380);
       expect(menu.dishes.last.priceGrosz, 3850);

@@ -21,9 +21,7 @@ PhotoStore tempPhotoStore() {
 /// off `Theme.of(context).colorScheme` and would throw against Flutter's
 /// default in ways that never happen in the app.
 Future<void> pumpScreen(WidgetTester tester, Widget child) async {
-  await tester.pumpWidget(
-    MaterialApp(theme: buildLightTheme(), home: child),
-  );
+  await tester.pumpWidget(MaterialApp(theme: buildLightTheme(), home: child));
   await tester.pump();
 }
 
