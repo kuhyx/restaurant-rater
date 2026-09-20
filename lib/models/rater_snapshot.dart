@@ -18,7 +18,7 @@ import 'package:restaurant_rater/models/tasting.dart';
 class RaterSnapshot {
   /// Creates a snapshot. The lists are stored as given; callers must not
   /// mutate them afterwards.
-  const RaterSnapshot({
+  const new({
     required this.restaurants,
     required this.menuItems,
     required this.tastings,

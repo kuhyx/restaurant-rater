@@ -17,7 +17,7 @@ String dishCount(int count) => count == 1 ? '1 dish' : '$count dishes';
 /// short with nothing on screen ever having said so.
 class ImportPreview extends StatelessWidget {
   /// Creates the preview.
-  const ImportPreview({
+  const new({
     required this.menu,
     required this.dishes,
     required this.extraWarnings,
@@ -55,7 +55,7 @@ class ImportPreview extends StatelessWidget {
 }
 
 class _DishRow extends StatelessWidget {
-  const _DishRow(this.dish);
+  const new(this.dish);
 
   final MenuDraft dish;
 
@@ -77,7 +77,7 @@ class _DishRow extends StatelessWidget {
 }
 
 class _Warning extends StatelessWidget {
-  const _Warning(this.message, {this.isError = false});
+  const new(this.message, {this.isError = false});
 
   final String message;
   final bool isError;

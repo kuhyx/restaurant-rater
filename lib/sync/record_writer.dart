@@ -16,7 +16,7 @@ import 'package:restaurant_rater/sync/restaurant_codec.dart';
 /// structural fact instead of a convention the next method has to remember.
 class RecordWriter {
   /// Writes to and reads from [store].
-  const RecordWriter(this.store);
+  const new(this.store);
 
   /// The local CRDT log.
   final LogStore store;
@@ -62,10 +62,7 @@ class RecordWriter {
   Future<void> writeField(String id, String field, Object? value) async {
     if (store.get(id) == null) return;
     await upsertMerged(
-      Record(
-        id: id,
-        fields: <String, Field>{field: (value, store.nextHlc())},
-      ),
+      Record(id: id, fields: <String, Field>{field: (value, store.nextHlc())}),
     );
   }
 

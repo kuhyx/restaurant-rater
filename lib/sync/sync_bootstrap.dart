@@ -18,7 +18,7 @@ import 'package:restaurant_rater/sync/sync_service.dart';
 /// The synced repository, plus the tick that pushes it.
 class SyncedStore {
   /// Bundles [repository] with the [sync] that publishes its writes.
-  const SyncedStore({
+  const new({
     required this.repository,
     required this.photos,
     required this.sync,

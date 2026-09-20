@@ -21,7 +21,7 @@ Future<RestaurantDraft?> editRestaurantDialog(
 );
 
 class _RestaurantDialog extends StatefulWidget {
-  const _RestaurantDialog({this.existing});
+  const new({this.existing});
 
   final Restaurant? existing;
 
@@ -51,9 +51,7 @@ class _RestaurantDialogState extends State<_RestaurantDialog> {
     // the guard for the keyboard's own submit action.
     if (name.isEmpty) return;
     final note = _note.text.trim();
-    Navigator.of(
-      context,
-    ).pop((name: name, note: note.isEmpty ? null : note));
+    Navigator.of(context).pop((name: name, note: note.isEmpty ? null : note));
   }
 
   @override

@@ -29,18 +29,18 @@ enum GoogleSignInStatus {
 /// The outcome of one attempt, with the detail needed to act on a failure.
 class GoogleSignInResult {
   /// A successful attempt carrying [idToken].
-  const GoogleSignInResult.succeeded(String this.idToken)
+  const new succeeded(String this.idToken)
     : status = GoogleSignInStatus.succeeded,
       detail = null;
 
   /// A user-dismissed picker.
-  const GoogleSignInResult.cancelled()
+  const new cancelled()
     : status = GoogleSignInStatus.cancelled,
       idToken = null,
       detail = null;
 
   /// A refusal, described by [detail].
-  const GoogleSignInResult.failed(String this.detail)
+  const new failed(String this.detail)
     : status = GoogleSignInStatus.failed,
       idToken = null;
 

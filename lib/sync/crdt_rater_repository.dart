@@ -33,12 +33,9 @@ class CrdtRaterRepository implements RaterRepository {
   /// every mutation that reaches storage -- so a method added here later
   /// cannot forget to trigger a push, which a per-method `onWrite` callback
   /// makes very easy to do.
-  CrdtRaterRepository({
-    required this.store,
-    this.uuid = const Uuid(),
-    DateTime Function()? now,
-  }) : _now = now ?? DateTime.now,
-       _write = RecordWriter(store);
+  new({required this.store, this.uuid = const Uuid(), DateTime Function()? now})
+    : _now = now ?? DateTime.now,
+      _write = RecordWriter(store);
 
   /// The local CRDT log this repository reads and writes.
   final LogStore store;
@@ -103,10 +100,11 @@ class CrdtRaterRepository implements RaterRepository {
     required String name,
     int? priceGrosz,
     Macros macros = Macros.empty,
-  }) => _appendDish(
-    restaurantId,
-    (name: name, priceGrosz: priceGrosz, macros: macros),
-  );
+  }) => _appendDish(restaurantId, (
+    name: name,
+    priceGrosz: priceGrosz,
+    macros: macros,
+  ));
 
   /// Writes one dish onto the end of [restaurantId]'s menu.
   ///

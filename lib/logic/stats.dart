@@ -10,11 +10,7 @@ import 'package:restaurant_rater/models/tasting.dart';
 @immutable
 class RestaurantProgress {
   /// Creates a progress summary.
-  const RestaurantProgress({
-    required this.rated,
-    required this.total,
-    required this.mean,
-  });
+  const new({required this.rated, required this.total, required this.mean});
 
   /// Dishes with at least one tasting.
   final int rated;

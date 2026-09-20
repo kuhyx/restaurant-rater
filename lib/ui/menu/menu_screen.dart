@@ -14,11 +14,7 @@ import 'package:restaurant_rater/ui/menu/menu_item_tile.dart';
 /// Lists and edits one restaurant's dishes.
 class MenuScreen extends StatelessWidget {
   /// Creates the menu screen for [restaurantId].
-  const MenuScreen({
-    required this.repository,
-    required this.restaurantId,
-    super.key,
-  });
+  const new({required this.repository, required this.restaurantId, super.key});
 
   /// The data.
   final RaterRepository repository;

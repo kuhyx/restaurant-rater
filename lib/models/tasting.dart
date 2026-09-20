@@ -22,7 +22,7 @@ const int kMaxScore = 10;
 @immutable
 class Tasting {
   /// Creates a tasting.
-  const Tasting({
+  const new({
     required this.id,
     required this.menuItemId,
     required this.restaurantId,

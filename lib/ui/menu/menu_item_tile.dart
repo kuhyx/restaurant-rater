@@ -10,7 +10,7 @@ import 'package:restaurant_rater/ui/common/score_chip.dart';
 /// A dish, its price, and whether it has been eaten or passed over.
 class MenuItemTile extends StatelessWidget {
   /// Creates a tile.
-  const MenuItemTile({
+  const new({
     required this.item,
     required this.score,
     required this.onEdit,

@@ -28,7 +28,7 @@ import 'package:restaurant_rater/ui/rating/rating_screen.dart';
 /// change the answer between two looks at the screen.
 class PickScreen extends StatelessWidget {
   /// Creates the pick screen for [restaurantId].
-  const PickScreen({
+  const new({
     required this.repository,
     required this.photos,
     required this.restaurantId,
@@ -85,7 +85,7 @@ class PickScreen extends StatelessWidget {
 }
 
 class _PickBody extends StatefulWidget {
-  const _PickBody({
+  const new({
     required this.repository,
     required this.photos,
     required this.restaurant,
@@ -155,11 +155,8 @@ class _PickBodyState extends State<_PickBody> {
     );
   }
 
-  PickResult _pick() => pickNext(
-    restaurant: widget.restaurant,
-    menu: _menu,
-    tastings: _tastings,
-  );
+  PickResult _pick() =>
+      pickNext(restaurant: widget.restaurant, menu: _menu, tastings: _tastings);
 
   List<MenuItem> get _menu => widget.snapshot.menuOf(widget.restaurant.id);
 

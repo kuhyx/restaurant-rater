@@ -10,7 +10,7 @@ import 'package:restaurant_rater/ui/common/score_chip.dart';
 /// A restaurant, its progress through the menu, and its average score.
 class RestaurantTile extends StatelessWidget {
   /// Creates a tile.
-  const RestaurantTile({
+  const new({
     required this.restaurant,
     required this.progress,
     required this.onTap,

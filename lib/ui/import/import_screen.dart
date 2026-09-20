@@ -20,7 +20,7 @@ import 'package:restaurant_rater/ui/import/import_preview.dart';
 /// to be the wrong menu costs a Cancel rather than a cleanup.
 class ImportScreen extends StatefulWidget {
   /// Creates the import screen.
-  const ImportScreen({required this.repository, super.key});
+  const new({required this.repository, super.key});
 
   /// The data.
   final RaterRepository repository;

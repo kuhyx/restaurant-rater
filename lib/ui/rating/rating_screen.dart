@@ -20,7 +20,7 @@ import 'package:restaurant_rater/ui/rating/score_slider.dart';
 /// Records a tasting of [item].
 class RatingScreen extends StatefulWidget {
   /// Creates the rating screen.
-  const RatingScreen({
+  const new({
     required this.repository,
     required this.photos,
     required this.item,
@@ -184,12 +184,7 @@ class _RatingScreenState extends State<RatingScreen> {
         ),
         const SizedBox(height: AppSpacing.lg),
         const SectionHeader('Macros'),
-        MacrosFields(
-          kcal: _kcal,
-          protein: _protein,
-          fat: _fat,
-          carbs: _carbs,
-        ),
+        MacrosFields(kcal: _kcal, protein: _protein, fat: _fat, carbs: _carbs),
         const SizedBox(height: AppSpacing.lg),
         const SectionHeader('Notes'),
         TextField(

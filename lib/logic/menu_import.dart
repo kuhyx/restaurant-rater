@@ -50,7 +50,7 @@ Rules:
 /// because a menu rejected wholesale sends you back to typing it in.
 class ImportedMenu {
   /// Creates a parse result.
-  const ImportedMenu({
+  const new({
     required this.dishes,
     required this.warnings,
     this.restaurantName,
@@ -59,7 +59,7 @@ class ImportedMenu {
   });
 
   /// Nothing usable, and why.
-  factory ImportedMenu.failed(String error) => ImportedMenu(
+  factory failed(String error) => ImportedMenu(
     dishes: const <MenuDraft>[],
     warnings: const <String>[],
     error: error,

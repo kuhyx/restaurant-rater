@@ -22,7 +22,7 @@ import 'package:restaurant_rater/ui/settings/sync_actions.dart';
 /// The restaurants list.
 class RestaurantsScreen extends StatelessWidget {
   /// Creates the home screen.
-  const RestaurantsScreen({
+  const new({
     required this.repository,
     required this.photos,
     required this.sync,
@@ -67,18 +67,14 @@ class RestaurantsScreen extends StatelessWidget {
   void _openMenu(BuildContext context, Restaurant restaurant) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => MenuScreen(
-          repository: repository,
-          restaurantId: restaurant.id,
-        ),
+        builder: (_) =>
+            MenuScreen(repository: repository, restaurantId: restaurant.id),
       ),
     );
   }
 
   void _openRoute(BuildContext context, Widget screen) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => screen));
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
   }
 
   @override
@@ -120,10 +116,7 @@ class RestaurantsScreen extends StatelessWidget {
       tooltip: 'Add restaurant',
       child: const Icon(Icons.add),
     ),
-    body: RaterScope(
-      repository: repository,
-      builder: _body,
-    ),
+    body: RaterScope(repository: repository, builder: _body),
   );
 
   Widget _body(BuildContext context, RaterSnapshot snapshot) {

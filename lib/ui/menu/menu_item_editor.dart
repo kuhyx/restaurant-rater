@@ -21,7 +21,7 @@ Future<MenuItemDraft?> editMenuItemDialog(
 );
 
 class _MenuItemDialog extends StatefulWidget {
-  const _MenuItemDialog({this.existing});
+  const new({this.existing});
 
   final MenuItem? existing;
 

@@ -16,7 +16,7 @@ import 'package:restaurant_rater/photos/photo_store.dart';
 /// ever taken", the opposite of the truth).
 class PhotoThumb extends StatelessWidget {
   /// Creates a thumbnail.
-  const PhotoThumb({
+  const new({
     required this.photos,
     required this.photoName,
     this.size = 56,

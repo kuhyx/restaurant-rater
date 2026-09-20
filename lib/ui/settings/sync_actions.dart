@@ -73,7 +73,7 @@ Future<GoogleSignInStatus> connectSyncAccount({
 /// own words -- "unregistered client" is actionable, "sign-in failed" is not.
 class GoogleSignInRefused implements Exception {
   /// Creates a refusal described by [reason].
-  const GoogleSignInRefused(this.reason);
+  const new(this.reason);
 
   /// Google's explanation, as close to verbatim as the plugin surfaces it.
   final String reason;
@@ -95,7 +95,7 @@ class SyncActions extends StatefulWidget {
   /// Both platform calls are injected so a widget test never reaches Google
   /// or the keystore -- an unanswered channel would hang the whole test file
   /// rather than fail it.
-  const SyncActions({
+  const new({
     this.probe = probeSyncSession,
     this.connect = connectSyncAccount,
     super.key,

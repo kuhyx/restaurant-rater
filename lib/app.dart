@@ -32,7 +32,7 @@ class RaterApp extends StatelessWidget {
   ///
   /// Everything is injected rather than looked up, so a widget test builds the
   /// whole tree against fakes with no plugins, no files and no network.
-  const RaterApp({
+  const new({
     required this.repository,
     required this.photos,
     required this.sync,
@@ -53,10 +53,6 @@ class RaterApp extends StatelessWidget {
     title: 'Restaurant Rater',
     theme: buildLightTheme(),
     darkTheme: buildDarkTheme(),
-    home: RestaurantsScreen(
-      repository: repository,
-      photos: photos,
-      sync: sync,
-    ),
+    home: RestaurantsScreen(repository: repository, photos: photos, sync: sync),
   );
 }

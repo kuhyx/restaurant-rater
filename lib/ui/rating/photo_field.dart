@@ -22,16 +22,13 @@ typedef PickPhoto = Future<XFile?> Function(ImageSource source);
 /// 1600px and quality 85 turn a 6 MB Pixel original into roughly 300 KB. These
 /// are photos of soup for a personal record, and the full-resolution original
 /// buys nothing while filling the device.
-Future<XFile?> defaultPickPhoto(ImageSource source) => ImagePicker().pickImage(
-  source: source,
-  maxWidth: 1600,
-  imageQuality: 85,
-);
+Future<XFile?> defaultPickPhoto(ImageSource source) =>
+    ImagePicker().pickImage(source: source, maxWidth: 1600, imageQuality: 85);
 
 /// Shows the current photo and offers to replace or remove it.
 class PhotoField extends StatelessWidget {
   /// Creates the field.
-  const PhotoField({
+  const new({
     required this.photos,
     required this.photoName,
     required this.onPicked,

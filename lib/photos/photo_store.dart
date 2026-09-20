@@ -19,7 +19,7 @@ const String kPhotoDirName = 'photos';
 /// tries to render.
 class PhotoStore {
   /// Wraps [directory]. Injected rather than resolved, so tests get a temp dir.
-  PhotoStore(this.directory);
+  new(this.directory);
 
   /// Opens the real store at `<application-support>/photos`.
   static Future<PhotoStore> open() async {

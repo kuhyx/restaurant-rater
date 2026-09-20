@@ -28,7 +28,7 @@ library;
 /// unconditionally brings the loop back.
 class CoalescedTick {
   /// Coalesces calls to [run].
-  CoalescedTick(this.run);
+  new(this.run);
 
   /// The action. Its errors are swallowed, as the caller's were: a failed
   /// push is not an error the user has to dismiss, and it must not cancel the

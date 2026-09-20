@@ -8,7 +8,7 @@ import 'package:restaurant_rater/models/macros.dart';
 @immutable
 class Restaurant {
   /// Creates a restaurant.
-  const Restaurant({
+  const new({
     required this.id,
     required this.name,
     required this.createdAt,

@@ -35,7 +35,7 @@ typedef Replace<T> = T Function();
 class Macros {
   /// Creates a macro record. Omitted components stay null, meaning "unknown",
   /// which is a different claim from zero.
-  const Macros({this.kcal, this.proteinG, this.fatG, this.carbsG});
+  const new({this.kcal, this.proteinG, this.fatG, this.carbsG});
 
   /// Rebuilds a record from [json], tolerating absent and wrongly-typed
   /// fields.
@@ -43,7 +43,7 @@ class Macros {
   /// A value that is not a number decodes to null rather than throwing: these
   /// records arrive from a peer device that may be running a different build,
   /// and one unreadable macro must not take down the whole dish.
-  factory Macros.fromJson(Map<String, dynamic> json) => Macros(
+  factory fromJson(Map<String, dynamic> json) => Macros(
     kcal: _toDouble(json['kcal']),
     proteinG: _toDouble(json['proteinG']),
     fatG: _toDouble(json['fatG']),

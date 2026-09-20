@@ -13,11 +13,7 @@ import 'package:restaurant_rater/ui/history/tasting_tile.dart';
 /// The full tasting history across every restaurant.
 class HistoryScreen extends StatelessWidget {
   /// Creates the history screen.
-  const HistoryScreen({
-    required this.repository,
-    required this.photos,
-    super.key,
-  });
+  const new({required this.repository, required this.photos, super.key});
 
   /// The data.
   final RaterRepository repository;
@@ -38,10 +34,7 @@ class HistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('History')),
-    body: RaterScope(
-      repository: repository,
-      builder: _body,
-    ),
+    body: RaterScope(repository: repository, builder: _body),
   );
 
   Widget _body(BuildContext context, RaterSnapshot snapshot) {

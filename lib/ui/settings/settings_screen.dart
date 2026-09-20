@@ -13,7 +13,7 @@ import 'package:restaurant_rater/ui/settings/sync_actions.dart';
 /// Connecting this device, and running a sync on demand.
 class SettingsScreen extends StatefulWidget {
   /// Creates the settings screen.
-  const SettingsScreen({
+  const new({
     required this.repository,
     required this.sync,
     this.syncProbe = probeSyncSession,

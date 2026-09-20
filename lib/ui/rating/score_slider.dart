@@ -13,7 +13,7 @@ import 'package:restaurant_rater/ui/common/score_chip.dart';
 /// nobody actually has about a bowl of soup.
 class ScoreSlider extends StatelessWidget {
   /// Creates a slider labelled [label] for [value].
-  const ScoreSlider({
+  const new({
     required this.label,
     required this.value,
     required this.onChanged,

@@ -16,7 +16,7 @@ typedef MenuDraft = ({String name, int? priceGrosz, Macros macros});
 @immutable
 class MenuItem {
   /// Creates a menu item.
-  const MenuItem({
+  const new({
     required this.id,
     required this.restaurantId,
     required this.name,

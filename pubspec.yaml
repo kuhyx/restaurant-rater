@@ -30,7 +30,7 @@ dependencies:
   crdt_sync_flutter:
     git:
       url: https://github.com/kuhyx/utils
-      ref: crdt_sync_flutter-v0.3.1
+      ref: crdt_sync_flutter-v0.3.2
       path: crdt_sync_flutter
   # There is deliberately no local theme.dart, so this app cannot drift off
   # the shared token table.
@@ -41,7 +41,7 @@ dependencies:
       path: design_system
   flutter:
     sdk: flutter
-  flutter_secure_storage: 11.0.0 # holds the sync account password
+  flutter_secure_storage: 11.2.0 # holds the sync account password
   google_sign_in_platform_interface: 3.1.0 # the injectable sign-in seam
   http: 1.6.0 # http.Client, injected so sync is testable offline
   image_picker: 1.2.3
@@ -62,7 +62,7 @@ dev_dependencies:
   shared_preferences: 2.5.5
   # Carets are allowed here only because very_good_analysis is SDK-coupled;
   # the freshness gate still checks the range floor against latest.
-  very_good_analysis: ^10.3.0
+  very_good_analysis: ^11.0.0
 
 flutter:
   uses-material-design: true

@@ -34,7 +34,7 @@ enum PickReason {
 @immutable
 class PickResult {
   /// Creates a pick result.
-  const PickResult({required this.item, required this.reason});
+  const new({required this.item, required this.reason});
 
   /// The chosen dish, or null exactly when [reason] is [PickReason.emptyMenu].
   final MenuItem? item;

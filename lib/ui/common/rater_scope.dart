@@ -19,11 +19,7 @@ import 'package:restaurant_rater/models/rater_snapshot.dart';
 /// empty list on every single build.
 class RaterScope extends StatefulWidget {
   /// Creates a scope over [repository].
-  const RaterScope({
-    required this.repository,
-    required this.builder,
-    super.key,
-  });
+  const new({required this.repository, required this.builder, super.key});
 
   /// The data being watched.
   final RaterRepository repository;

@@ -10,7 +10,7 @@ import 'package:restaurant_rater/models/money.dart';
 /// Shows the chosen dish, its price, and why it was chosen.
 class PickCard extends StatelessWidget {
   /// Creates the card for [item].
-  const PickCard({required this.item, required this.reason, super.key});
+  const new({required this.item, required this.reason, super.key});
 
   /// The dish to eat.
   final MenuItem item;

@@ -11,7 +11,7 @@ import 'package:restaurant_rater/models/macros.dart';
 /// widget never has to reconcile its own state with a rebuild.
 class MacrosFields extends StatelessWidget {
   /// Creates the field group.
-  const MacrosFields({
+  const new({
     required this.kcal,
     required this.protein,
     required this.fat,

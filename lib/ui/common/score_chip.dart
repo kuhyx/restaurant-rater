@@ -11,7 +11,7 @@ import 'package:restaurant_rater/logic/scores.dart';
 /// column of identical grey numbers gives the eye nothing to catch on.
 class ScoreChip extends StatelessWidget {
   /// Creates a chip for [score] on the 0-10 scale.
-  const ScoreChip({required this.score, this.label, super.key});
+  const new({required this.score, this.label, super.key});
 
   /// The value, 0-10.
   final double score;
@@ -45,9 +45,7 @@ class ScoreChip extends StatelessWidget {
       ),
       child: Text(
         caption == null ? formatScore(score) : '$caption ${formatScore(score)}',
-        style: Theme.of(
-          context,
-        ).textTheme.labelMedium?.copyWith(color: tint),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(color: tint),
       ),
     );
   }

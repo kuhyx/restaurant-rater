@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 /// The two things you can do with the offered dish.
 class PickActions extends StatelessWidget {
   /// Creates the action row.
-  const PickActions({
+  const new({
     required this.onRate,
     required this.onSkip,
     required this.canSkip,

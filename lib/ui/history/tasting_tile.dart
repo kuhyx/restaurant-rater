@@ -12,7 +12,7 @@ import 'package:restaurant_rater/ui/common/score_chip.dart';
 /// A tasting: dish, place, the three axes, and the photo if it is here.
 class TastingTile extends StatelessWidget {
   /// Creates a tile.
-  const TastingTile({
+  const new({
     required this.tasting,
     required this.dishName,
     required this.restaurantName,
