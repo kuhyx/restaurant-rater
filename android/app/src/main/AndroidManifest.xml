@@ -10,7 +10,7 @@
          prompt for nothing. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="Restaurant Rater"
+        android:label="Rater"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
