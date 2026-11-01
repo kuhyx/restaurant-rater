@@ -9,6 +9,7 @@ import 'package:restaurant_rater/models/rater_snapshot.dart';
 import 'package:restaurant_rater/models/restaurant.dart';
 import 'package:restaurant_rater/photos/photo_store.dart';
 import 'package:restaurant_rater/sync/sync_service.dart';
+import 'package:restaurant_rater/ui/common/fit_layout.dart';
 import 'package:restaurant_rater/ui/common/rater_scope.dart';
 import 'package:restaurant_rater/ui/history/history_screen.dart';
 import 'package:restaurant_rater/ui/import/import_screen.dart';
@@ -127,20 +128,25 @@ class RestaurantsScreen extends StatelessWidget {
         message: 'Add a place, then type in its menu.',
       );
     }
-    return ListView.builder(
-      itemCount: snapshot.restaurants.length,
-      itemBuilder: (context, index) {
-        final restaurant = snapshot.restaurants[index];
-        return RestaurantTile(
-          restaurant: restaurant,
-          progress: progressOf(
-            menu: snapshot.menuOf(restaurant.id),
-            tastings: snapshot.tastingsOf(restaurant.id),
-          ),
-          onTap: () => _openPick(context, restaurant),
-          onEditMenu: () => _openMenu(context, restaurant),
-        );
-      },
+    return SafeArea(
+      top: false,
+      child: FitGrid(
+        columns: 2,
+        padding: fitGridPadding(fab: true),
+        itemCount: snapshot.restaurants.length,
+        itemBuilder: (context, index) {
+          final restaurant = snapshot.restaurants[index];
+          return RestaurantTile(
+            restaurant: restaurant,
+            progress: progressOf(
+              menu: snapshot.menuOf(restaurant.id),
+              tastings: snapshot.tastingsOf(restaurant.id),
+            ),
+            onTap: () => _openPick(context, restaurant),
+            onEditMenu: () => _openMenu(context, restaurant),
+          );
+        },
+      ),
     );
   }
 }

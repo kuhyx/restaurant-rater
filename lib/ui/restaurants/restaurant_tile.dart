@@ -1,4 +1,4 @@
-/// One row in the restaurants list.
+/// One tile in the restaurants grid.
 library;
 
 import 'package:design_system/design_system.dart';
@@ -24,37 +24,71 @@ class RestaurantTile extends StatelessWidget {
   /// How much of its menu has been eaten.
   final RestaurantProgress progress;
 
-  /// Tapping the row goes to the pick — the app's whole point is answering
+  /// Tapping the tile goes to the pick — the app's whole point is answering
   /// "what do I order here", so that is the default action rather than a menu
   /// listing the user has to step through first.
   final VoidCallback onTap;
 
-  /// The trailing icon opens the menu for editing.
+  /// The corner icon opens the menu for editing.
   final VoidCallback onEditMenu;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final mean = progress.mean;
     final note = restaurant.note;
-    return ListTile(
-      title: Text(restaurant.name),
-      subtitle: Text(
-        note == null || note.isEmpty
-            ? progress.label
-            : '$note  ·  ${progress.label}',
-      ),
-      onTap: onTap,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          if (mean != null) ScoreChip(score: mean),
-          const SizedBox(width: AppSpacing.sm),
-          IconButton(
-            icon: const Icon(Icons.restaurant_menu),
-            tooltip: 'Menu',
-            onPressed: onEditMenu,
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.only(
+            left: AppSpacing.md,
+            top: AppSpacing.sm,
+            bottom: AppSpacing.sm,
           ),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.sm),
+                      child: Text(
+                        restaurant.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.restaurant_menu),
+                    tooltip: 'Menu',
+                    onPressed: onEditMenu,
+                  ),
+                ],
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: AppSpacing.md),
+                  child: Text(
+                    note == null || note.isEmpty
+                        ? progress.label
+                        : '$note  ·  ${progress.label}',
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+              ),
+              if (mean != null) ScoreChip(score: mean),
+            ],
+          ),
+        ),
       ),
     );
   }

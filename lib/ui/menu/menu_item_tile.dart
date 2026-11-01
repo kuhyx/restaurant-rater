@@ -1,4 +1,4 @@
-/// One dish in the menu list.
+/// One dish tile in the menu grid.
 library;
 
 import 'package:design_system/design_system.dart';
@@ -24,43 +24,61 @@ class MenuItemTile extends StatelessWidget {
   /// Its mean overall, or null when it has never been rated.
   final double? score;
 
-  /// Opens the editor.
+  /// Opens the editor (tap).
   final VoidCallback onEdit;
 
-  /// Deletes the dish, after confirmation.
+  /// Deletes the dish, after confirmation (long-press: a destructive action
+  /// has no business being one stray tap away on a tile this small).
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final price = item.priceGrosz;
     final kcal = item.macros.kcal;
     final mean = score;
-    return ListTile(
-      title: Text(item.name),
-      subtitle: Text(
-        <String>[
-          if (price != null) formatPln(price),
-          // The menu's claim, shown here so a dish you have not eaten yet
-          // still says what it costs you.
-          if (kcal != null) '${kcal.round()} kcal',
-          if (mean == null) 'not tried yet',
-          // Only worth saying while it is still unrated — a skip on a dish you
-          // have since eaten is history, not a state.
-          if (mean == null && item.isSkipped) 'skipped',
-        ].join('  ·  '),
-      ),
-      onTap: onEdit,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          if (mean != null) ScoreChip(score: mean),
-          const SizedBox(width: AppSpacing.sm),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            tooltip: 'Delete dish',
-            onPressed: onDelete,
+    final meta = <String>[
+      if (price != null) formatPln(price),
+      // The menu's claim, shown here so a dish you have not eaten yet still
+      // says what it costs you.
+      if (kcal != null) '${kcal.round()} kcal',
+      if (mean == null) 'not tried yet',
+      // Only worth saying while it is still unrated — a skip on a dish you
+      // have since eaten is history, not a state.
+      if (mean == null && item.isSkipped) 'skipped',
+    ];
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onEdit,
+        onLongPress: onDelete,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  item.name,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelLarge,
+                ),
+              ),
+              Text(
+                meta.join('  ·  '),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall,
+              ),
+              if (mean != null) ...<Widget>[
+                const SizedBox(height: AppSpacing.xs),
+                ScoreChip(score: mean),
+              ],
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

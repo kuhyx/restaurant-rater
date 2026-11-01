@@ -29,8 +29,9 @@ class PhotoThumb extends StatelessWidget {
   /// The filename recorded on the tasting, or null when none was taken.
   final String? photoName;
 
-  /// Edge length of the square thumbnail.
-  final double size;
+  /// Edge length of the square thumbnail, or null to fill whatever box the
+  /// parent gives it (a grid tile whose height is only known at layout).
+  final double? size;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +77,7 @@ class PhotoThumb extends StatelessWidget {
         ),
         child: Icon(
           Icons.phone_iphone,
-          size: size / 2.5,
+          size: (size ?? 48) / 2.5,
           color: theme.colorScheme.onSurfaceVariant,
         ),
       ),

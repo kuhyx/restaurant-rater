@@ -41,6 +41,7 @@ class PickCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
@@ -51,7 +52,12 @@ class PickCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            Text(item.name, style: theme.textTheme.headlineSmall),
+            Text(
+              item.name,
+              maxLines: 6,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.headlineSmall,
+            ),
             if (price != null) ...<Widget>[
               const SizedBox(height: AppSpacing.sm),
               Text(

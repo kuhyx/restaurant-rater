@@ -7,6 +7,7 @@ import 'package:restaurant_rater/data/rater_repository.dart';
 import 'package:restaurant_rater/logic/scores.dart';
 import 'package:restaurant_rater/models/menu_item.dart';
 import 'package:restaurant_rater/models/rater_snapshot.dart';
+import 'package:restaurant_rater/ui/common/fit_layout.dart';
 import 'package:restaurant_rater/ui/common/rater_scope.dart';
 import 'package:restaurant_rater/ui/menu/menu_item_editor.dart';
 import 'package:restaurant_rater/ui/menu/menu_item_tile.dart';
@@ -81,19 +82,23 @@ class MenuScreen extends StatelessWidget {
       );
     }
     final tastings = snapshot.tastingsOf(restaurantId);
-    return ListView.builder(
-      itemCount: menu.length,
-      itemBuilder: (context, index) {
-        final item = menu[index];
-        return MenuItemTile(
-          item: item,
-          score: meanOverall(
-            tastings.where((tasting) => tasting.menuItemId == item.id),
-          ),
-          onEdit: () => _edit(context, item),
-          onDelete: () => _delete(context, item),
-        );
-      },
+    return SafeArea(
+      top: false,
+      child: FitGrid(
+        padding: fitGridPadding(fab: true),
+        itemCount: menu.length,
+        itemBuilder: (context, index) {
+          final item = menu[index];
+          return MenuItemTile(
+            item: item,
+            score: meanOverall(
+              tastings.where((tasting) => tasting.menuItemId == item.id),
+            ),
+            onEdit: () => _edit(context, item),
+            onDelete: () => _delete(context, item),
+          );
+        },
+      ),
     );
   }
 }

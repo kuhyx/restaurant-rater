@@ -191,15 +191,24 @@ class _PickBodyState extends State<_PickBody> {
         message: 'Add the menu, then come back and it will pick one.',
       );
     }
-    return ListView(
-      children: <Widget>[
-        PickCard(item: item, reason: _shownReason ?? result.reason),
-        PickActions(
-          onRate: () => _rate(item),
-          onSkip: () => unawaited(_skip(item)),
-          canSkip: canSkipToAnother(menu: _menu, tastings: _tastings),
-        ),
-      ],
+    // One card that takes the height the actions leave, so the screen never
+    // scrolls whatever the dish name's length.
+    return SafeArea(
+      top: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Expanded(
+            child: PickCard(item: item, reason: _shownReason ?? result.reason),
+          ),
+          PickActions(
+            onRate: () => _rate(item),
+            onSkip: () => unawaited(_skip(item)),
+            canSkip: canSkipToAnother(menu: _menu, tastings: _tastings),
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+      ),
     );
   }
 }

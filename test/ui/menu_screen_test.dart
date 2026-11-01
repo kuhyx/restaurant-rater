@@ -7,6 +7,7 @@ import 'package:restaurant_rater/models/macros.dart';
 import 'package:restaurant_rater/models/menu_item.dart';
 import 'package:restaurant_rater/models/restaurant.dart';
 import 'package:restaurant_rater/models/tasting.dart';
+import 'package:restaurant_rater/ui/menu/menu_item_tile.dart';
 import 'package:restaurant_rater/ui/menu/menu_screen.dart';
 
 import '../support/builders.dart';
@@ -55,8 +56,8 @@ void main() {
     await open(tester);
 
     final titles = tester
-        .widgetList<ListTile>(find.byType(ListTile))
-        .map((tile) => (tile.title! as Text).data)
+        .widgetList<MenuItemTile>(find.byType(MenuItemTile))
+        .map((tile) => tile.item.name)
         .toList();
     expect(titles, <String>['tom kha', 'tom yum']);
     expect(find.text('24 zł  ·  not tried yet  ·  skipped'), findsOneWidget);
@@ -113,20 +114,22 @@ void main() {
     expect(repository.calls, contains('editMenuItem:m1/tom kha (duża)/2400'));
   });
 
-  testWidgets('deletes a dish only after confirmation', (tester) async {
+  testWidgets('long-press deletes a dish only after confirmation', (
+    tester,
+  ) async {
     repository = FakeRaterRepository(
       restaurants: <Restaurant>[aRestaurant()],
       menuItems: <MenuItem>[aMenuItem()],
     );
     await open(tester);
 
-    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.longPress(find.text('tom kha z kurczakiem'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(repository.calls, isEmpty, reason: 'cancel means cancel');
 
-    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.longPress(find.text('tom kha z kurczakiem'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();

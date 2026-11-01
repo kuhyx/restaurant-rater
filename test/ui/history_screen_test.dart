@@ -7,6 +7,7 @@ import 'package:restaurant_rater/models/menu_item.dart';
 import 'package:restaurant_rater/models/restaurant.dart';
 import 'package:restaurant_rater/models/tasting.dart';
 import 'package:restaurant_rater/ui/history/history_screen.dart';
+import 'package:restaurant_rater/ui/history/tasting_tile.dart';
 
 import '../support/builders.dart';
 import '../support/fake_rater_repository.dart';
@@ -60,16 +61,19 @@ void main() {
     await open(tester);
 
     final titles = tester
-        .widgetList<ListTile>(find.byType(ListTile))
-        .map((tile) => (tile.title! as Text).data)
+        .widgetList<TastingTile>(find.byType(TastingTile))
+        .map((tile) => tile.dishName)
         .toList();
     expect(titles, <String>['tom yum', 'tom kha'], reason: 'newest first');
-    expect(find.text('smak 7,0'), findsOneWidget);
-    expect(find.text('zapach 6,0'), findsNWidgets(2));
-    expect(find.text('estetyka 4,0'), findsOneWidget);
     expect(find.text('5,7'), findsOneWidget);
     expect(find.text('5,0'), findsOneWidget);
-    expect(find.text('Bar Tajski'), findsNWidgets(2));
+
+    await tester.tap(find.byType(TastingTile).first);
+    await tester.pumpAndSettle();
+    expect(find.text('smak 3,0'), findsOneWidget);
+    expect(find.text('zapach 6,0'), findsOneWidget);
+    expect(find.text('estetyka 6,0'), findsOneWidget);
+    expect(find.text('Bar Tajski'), findsOneWidget);
   });
 
   testWidgets('shows a thumbnail placeholder for a photo from elsewhere', (
@@ -94,17 +98,54 @@ void main() {
     );
     await open(tester);
 
+    await tester.tap(find.byType(TastingTile));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.delete_outline));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(repository.calls, isEmpty);
 
+    await tester.tap(find.byType(TastingTile));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.delete_outline));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
     expect(repository.calls, contains('deleteTasting:t1'));
     expect(find.text('Nothing rated yet'), findsOneWidget);
+  });
+
+  testWidgets('dismissing the sheet deletes nothing', (tester) async {
+    repository = FakeRaterRepository(
+      restaurants: <Restaurant>[aRestaurant()],
+      menuItems: <MenuItem>[aMenuItem()],
+      tastings: <Tasting>[aTasting()],
+    );
+    await open(tester);
+
+    await tester.tap(find.byType(TastingTile));
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.delete_outline), findsNothing);
+    expect(repository.calls, isEmpty);
+  });
+
+  testWidgets('shows a photo that is on this device', (tester) async {
+    final photos = tempPhotoStore()..directory.createSync(recursive: true);
+    photos.fileFor('here.jpg').writeAsBytesSync(onePixelPng);
+    repository = FakeRaterRepository(
+      restaurants: <Restaurant>[aRestaurant()],
+      menuItems: <MenuItem>[aMenuItem()],
+      tastings: <Tasting>[aTasting(photoName: 'here.jpg')],
+    );
+    await pumpScreen(
+      tester,
+      HistoryScreen(repository: repository, photos: photos),
+    );
+
+    expect(find.byType(Image), findsOneWidget);
   });
 }

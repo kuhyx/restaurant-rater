@@ -7,7 +7,9 @@ import 'package:restaurant_rater/data/rater_repository.dart';
 import 'package:restaurant_rater/models/rater_snapshot.dart';
 import 'package:restaurant_rater/models/tasting.dart';
 import 'package:restaurant_rater/photos/photo_store.dart';
+import 'package:restaurant_rater/ui/common/fit_layout.dart';
 import 'package:restaurant_rater/ui/common/rater_scope.dart';
+import 'package:restaurant_rater/ui/history/tasting_sheet.dart';
 import 'package:restaurant_rater/ui/history/tasting_tile.dart';
 
 /// The full tasting history across every restaurant.
@@ -20,6 +22,22 @@ class HistoryScreen extends StatelessWidget {
 
   /// On-device photo storage.
   final PhotoStore photos;
+
+  Future<void> _open(
+    BuildContext context,
+    Tasting tasting,
+    String dishName,
+    String restaurantName,
+  ) async {
+    final wantsDelete = await showTastingSheet(
+      context,
+      tasting: tasting,
+      dishName: dishName,
+      restaurantName: restaurantName,
+    );
+    if (!wantsDelete || !context.mounted) return;
+    await _delete(context, tasting);
+  }
 
   Future<void> _delete(BuildContext context, Tasting tasting) async {
     final confirmed = await confirmDestructive(
@@ -47,21 +65,37 @@ class HistoryScreen extends StatelessWidget {
         message: 'Pick a restaurant and rate what it offers you.',
       );
     }
-    return ListView.builder(
-      itemCount: tastings.length,
-      itemBuilder: (context, index) {
-        final tasting = tastings[index];
-        return TastingTile(
-          tasting: tasting,
+    final labelHeight = textBlockHeight(
+      context,
+      Theme.of(context).textTheme.labelMedium,
+      kTastingLabelLines,
+    );
+    return SafeArea(
+      top: false,
+      child: FitGrid(
+        padding: fitGridPadding(),
+        labelHeight: labelHeight,
+        itemCount: tastings.length,
+        itemBuilder: (context, index) {
+          final tasting = tastings[index];
           // A tasting whose dish or restaurant is gone is filtered out at load
           // — these fallbacks cover a record mid-merge, not a normal state.
-          dishName: snapshot.menuItemById(tasting.menuItemId)?.name ?? 'Dish',
-          restaurantName:
+          final dishName =
+              snapshot.menuItemById(tasting.menuItemId)?.name ?? 'Dish';
+          return TastingTile(
+            tasting: tasting,
+            dishName: dishName,
+            photos: photos,
+            labelHeight: labelHeight,
+            onTap: () => _open(
+              context,
+              tasting,
+              dishName,
               snapshot.restaurantById(tasting.restaurantId)?.name ?? '',
-          photos: photos,
-          onDelete: () => _delete(context, tasting),
-        );
-      },
+            ),
+          );
+        },
+      ),
     );
   }
 }
