@@ -25,12 +25,12 @@ dependencies:
   crdt_sync:
     git:
       url: https://github.com/kuhyx/utils
-      ref: crdt_sync_dart-v0.11.3
+      ref: crdt_sync_dart-v0.12.0
       path: crdt_sync_dart
   crdt_sync_flutter:
     git:
       url: https://github.com/kuhyx/utils
-      ref: crdt_sync_flutter-v0.3.5
+      ref: crdt_sync_flutter-v0.5.0
       path: crdt_sync_flutter
   # There is deliberately no local theme.dart, so this app cannot drift off
   # the shared token table.
