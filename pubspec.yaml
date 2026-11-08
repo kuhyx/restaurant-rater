@@ -42,6 +42,10 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_secure_storage: 11.2.0 # holds the sync account password
+  # Android sign-in via the platform interface: without the Android package
+  # registered, GoogleSignInPlatform.instance throws UnimplementedError. Not
+  # the app-facing google_sign_in, which would also register the web plugin.
+  google_sign_in_android: 7.2.18
   google_sign_in_platform_interface: 3.1.0 # the injectable sign-in seam
   http: 1.6.0 # http.Client, injected so sync is testable offline
   image_picker: 1.2.4
