@@ -1,18 +1,17 @@
-/// Raising the Google picker, and saying which of three things happened.
+/// Raising the Google account chooser, and saying which of three things
+/// happened.
 ///
-/// This exists because the shared library cannot answer the question. Its
-/// `googleIdToken` collapses every `GoogleSignInException` into null, so a
-/// dismissed picker and an OAuth client Google has never heard of arrive at
-/// the caller as the same value -- which is exactly how tapping "Connect"
-/// came to do nothing visible on a device whose client was unregistered.
+/// `google_account_token` returns null for a dismissed chooser and for a
+/// token request that failed (the failure is only logged), so on Android a
+/// null is reported as a cancel. A platform with no AccountManager is the one
+/// failure this layer can name, and it is surfaced rather than swallowed so
+/// the Connect tile never does nothing visible.
 ///
-/// The plugin is driven through [GoogleSignInPlatform] rather than the
-/// `GoogleSignIn` facade so that the failure branches are reachable from
-/// `flutter test`: the platform instance is settable, the facade's channel is
-/// not. That keeps this file honestly covered instead of suppressed.
+/// The plugin call is injectable ([IdTokenFetcher]) so tests drive every
+/// branch without a platform channel.
 library;
 
-import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import 'package:google_account_token/google_account_token.dart' as plugin;
 
 /// Which of the three outcomes a sign-in attempt reached.
 enum GoogleSignInStatus {
@@ -22,7 +21,7 @@ enum GoogleSignInStatus {
   /// The user backed out. A choice, not a failure: nothing to report.
   cancelled,
 
-  /// Google refused. The user has to see this, with the reason.
+  /// Sign-in cannot work here. The user has to see this, with the reason.
   failed,
 }
 
@@ -33,7 +32,7 @@ class GoogleSignInResult {
     : status = GoogleSignInStatus.succeeded,
       detail = null;
 
-  /// A user-dismissed picker.
+  /// A dismissed chooser, or a token request the plugin could not complete.
   const new cancelled()
     : status = GoogleSignInStatus.cancelled,
       idToken = null,
@@ -54,52 +53,28 @@ class GoogleSignInResult {
   final String? detail;
 }
 
-/// Turns a plugin exception into one of the three outcomes.
-///
-/// Only [GoogleSignInExceptionCode.canceled] with nothing attached counts as a
-/// cancel. That narrowness is deliberate and was the second half of this bug:
-/// on Android's Credential Manager an unregistered client can surface as a
-/// cancel-shaped code, so treating the code alone as "the user changed their
-/// mind" would hide the misconfiguration all over again. Anything carrying a
-/// description or details is Google explaining a refusal, and is reported.
-GoogleSignInResult classifyGoogleFailure(GoogleSignInException error) {
-  final described = error.description ?? '';
-  if (error.code == GoogleSignInExceptionCode.canceled &&
-      described.isEmpty &&
-      error.details == null) {
-    return const GoogleSignInResult.cancelled();
-  }
-  final details = error.details == null ? '' : ' (${error.details})';
-  return GoogleSignInResult.failed('${error.code.name}: $described$details');
-}
+/// Fetches a Google ID token minted for [serverClientId], or null.
+typedef IdTokenFetcher = Future<String?> Function({
+  required String serverClientId,
+});
 
-/// Raises the account picker and reports what came back.
+/// Raises the account chooser and reports what came back.
 ///
-/// [serverClientId] must be the project's **Web** client id; Android has to
-/// request a token minted for it, and an Android client id yields a token
-/// Firebase rejects as an audience mismatch.
+/// [serverClientId] must be the project's **Web** client id; an Android
+/// client id yields a token Firebase rejects as an audience mismatch.
+/// [tokenFetcher] replaces the plugin's platform channel in tests.
 Future<GoogleSignInResult> googleSignInAttempt({
   required String serverClientId,
-  GoogleSignInPlatform? platform,
+  IdTokenFetcher tokenFetcher = plugin.googleIdToken,
 }) async {
-  final google = platform ?? GoogleSignInPlatform.instance;
-  try {
-    await google.init(InitParameters(serverClientId: serverClientId));
-    if (!google.supportsAuthenticate()) {
-      return const GoogleSignInResult.failed(
-        'this build of Android has no Google sign-in flow available',
-      );
-    }
-    final results = await google.authenticate(const AuthenticateParameters());
-    final token = results.authenticationTokens.idToken;
-    if (token == null) {
-      // Signed in, but with no ID token there is nothing to hand Firebase.
-      return const GoogleSignInResult.failed(
-        'Google returned an account but no ID token',
-      );
-    }
-    return GoogleSignInResult.succeeded(token);
-  } on GoogleSignInException catch (error) {
-    return classifyGoogleFailure(error);
+  if (!plugin.googleAccountTokenSupported) {
+    return const GoogleSignInResult.failed(
+      'Google sign-in is only available on Android',
+    );
   }
+  final token = await tokenFetcher(serverClientId: serverClientId);
+  if (token == null) {
+    return const GoogleSignInResult.cancelled();
+  }
+  return GoogleSignInResult.succeeded(token);
 }

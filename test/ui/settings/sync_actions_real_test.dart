@@ -1,16 +1,14 @@
 import 'dart:convert';
 
 import 'package:crdt_sync_flutter/testing/fake_secure_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'package:http/testing.dart' as http_testing;
 import 'package:restaurant_rater/sync/sync_service.dart';
 import 'package:restaurant_rater/ui/settings/google_sign_in_result.dart';
 import 'package:restaurant_rater/ui/settings/sync_actions.dart';
-
-import 'fake_google_sign_in.dart';
 
 /// Drives the production defaults rather than an injected stub.
 ///
@@ -42,43 +40,31 @@ void main() {
 
   testWidgets('connectSyncAccount reports a dismissed picker', (tester) async {
     installFakeSecureStorage();
-
     final status = await connectSyncAccount(
-      platform: FakeGoogleSignIn(
-        error: const GoogleSignInException(
-          code: GoogleSignInExceptionCode.canceled,
-        ),
-      ),
+      tokenFetcher: ({required serverClientId}) async => null,
     );
 
     // Cancelling stays quiet; it must not read as a failure.
     expect(status, GoogleSignInStatus.cancelled);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('connectSyncAccount throws when Google refuses', (tester) async {
+  testWidgets('connectSyncAccount throws off Android', (tester) async {
     installFakeSecureStorage();
-
-    // The on-device failure: the picker opened, the account was chosen, and
-    // Google refused because the client is not registered. Previously this
-    // returned the same value as a cancel and the user saw nothing at all.
+    // No AccountManager here: the refusal carries its reason to the tile
+    // instead of the tap doing nothing visible.
     await expectLater(
       connectSyncAccount(
-        platform: FakeGoogleSignIn(
-          error: const GoogleSignInException(
-            code: GoogleSignInExceptionCode.clientConfigurationError,
-            description: 'UNREGISTERED_ON_API_CONSOLE',
-          ),
-        ),
+        tokenFetcher: ({required serverClientId}) async => 'unreachable',
       ),
       throwsA(
         isA<GoogleSignInRefused>().having(
           (error) => error.toString(),
           'reason',
-          contains('UNREGISTERED_ON_API_CONSOLE'),
+          contains('only available on Android'),
         ),
       ),
     );
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
   testWidgets('connectSyncAccount is true once Firebase accepts the token', (
     tester,
@@ -99,14 +85,14 @@ void main() {
     );
 
     final connected = await connectSyncAccount(
-      platform: FakeGoogleSignIn(result: googleResult('a-google-id-token')),
+      tokenFetcher: ({required serverClientId}) async => 'a-google-id-token',
       httpClient: firebase,
     );
 
     expect(connected, GoogleSignInStatus.succeeded);
     // The session is durable now, so the probe agrees.
     expect(await probeSyncSession(), isTrue);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('connectSyncAccount rejects the wrong Google account', (
     tester,
@@ -128,13 +114,13 @@ void main() {
     // authenticate fine and then be denied every read and write.
     await expectLater(
       connectSyncAccount(
-        platform: FakeGoogleSignIn(result: googleResult('a-google-id-token')),
+        tokenFetcher: ({required serverClientId}) async => 'a-google-id-token',
         httpClient: firebase,
       ),
       throwsA(isA<Exception>()),
     );
     expect(await probeSyncSession(), isFalse);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('the tile uses the real calls by default', (tester) async {
     installFakeSecureStorage();

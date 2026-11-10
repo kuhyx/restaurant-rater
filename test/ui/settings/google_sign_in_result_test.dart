@@ -1,142 +1,78 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'package:restaurant_rater/ui/settings/google_sign_in_result.dart';
 
-import 'fake_google_sign_in.dart';
+const _channel = MethodChannel('dev.kuhy/google_account_token');
 
-/// Covers the classification that the shared library cannot do.
-///
-/// `crdt_sync_flutter`'s `googleIdToken` collapses every plugin exception into
-/// null, so "you dismissed the picker" and "your OAuth client is not
-/// registered" arrive identically. These tests pin the distinction, because
-/// losing it is what made the Connect tile do nothing visible on-device.
+/// The plugin returns null for a dismissed chooser and for a failed token
+/// request alike, so on Android null is a cancel; off Android the failure is
+/// named so the Connect tile is never silent.
 void main() {
-  test('falls back to the registered platform instance', () async {
-    // No `platform:` argument: this is the production path, which reads
-    // GoogleSignInPlatform.instance. Settable, so the default is covered for
-    // real rather than suppressed.
-    final google = FakeGoogleSignIn(result: googleResult('from-the-instance'));
-    GoogleSignInPlatform.instance = google;
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    final attempt = await googleSignInAttempt(serverClientId: 'web-client');
-
-    expect(attempt.status, GoogleSignInStatus.succeeded);
-    expect(attempt.idToken, 'from-the-instance');
+  tearDown(() {
+    debugDefaultTargetPlatformOverride = null;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_channel, null);
   });
 
-  test('a minted token succeeds', () async {
-    final google = FakeGoogleSignIn(result: googleResult('an-id-token'));
+  test('a minted token succeeds with the Web client id', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    String? asked;
 
     final attempt = await googleSignInAttempt(
       serverClientId: 'web-client',
-      platform: google,
+      tokenFetcher: ({required serverClientId}) async {
+        asked = serverClientId;
+        return 'an-id-token';
+      },
     );
 
     expect(attempt.status, GoogleSignInStatus.succeeded);
     expect(attempt.idToken, 'an-id-token');
     // The Web client id, not an Android one: Firebase rejects a token minted
     // for an Android client as an audience mismatch.
-    expect(google.initialisedWith, 'web-client');
+    expect(asked, 'web-client');
   });
 
-  test('a bare cancel is a choice, not a failure', () async {
+  test('no token on Android is a cancel', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+
     final attempt = await googleSignInAttempt(
       serverClientId: 'web-client',
-      platform: FakeGoogleSignIn(
-        error: const GoogleSignInException(
-          code: GoogleSignInExceptionCode.canceled,
-        ),
-      ),
+      tokenFetcher: ({required serverClientId}) async => null,
     );
 
     expect(attempt.status, GoogleSignInStatus.cancelled);
     expect(attempt.detail, isNull);
   });
 
-  test('a cancel carrying a description is reported', () async {
-    // The failure mode this narrowness exists for: on Android's Credential
-    // Manager an unregistered client can arrive shaped like a cancel, so the
-    // code alone must not be trusted to mean "the user changed their mind".
+  test('a platform without AccountManager fails loudly', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+
     final attempt = await googleSignInAttempt(
       serverClientId: 'web-client',
-      platform: FakeGoogleSignIn(
-        error: const GoogleSignInException(
-          code: GoogleSignInExceptionCode.canceled,
-          description: 'UNREGISTERED_ON_API_CONSOLE',
-        ),
-      ),
+      tokenFetcher: ({required serverClientId}) async => 'unreachable',
     );
 
     expect(attempt.status, GoogleSignInStatus.failed);
-    expect(attempt.detail, contains('UNREGISTERED_ON_API_CONSOLE'));
+    expect(attempt.detail, contains('only available on Android'));
   });
 
-  test('a cancel carrying details is reported', () async {
-    final attempt = await googleSignInAttempt(
-      serverClientId: 'web-client',
-      platform: FakeGoogleSignIn(
-        error: const GoogleSignInException(
-          code: GoogleSignInExceptionCode.canceled,
-          details: 'status=UNREGISTERED_ON_API_CONSOLE',
-        ),
-      ),
-    );
+  test('defaults to the account-token plugin channel', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    Object? sent;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_channel, (call) async {
+          sent = call.arguments;
+          return 'plugin-token';
+        });
 
-    expect(attempt.status, GoogleSignInStatus.failed);
-    expect(attempt.detail, contains('status=UNREGISTERED_ON_API_CONSOLE'));
+    final attempt = await googleSignInAttempt(serverClientId: 'web-client');
+
+    expect(attempt.status, GoogleSignInStatus.succeeded);
+    expect(attempt.idToken, 'plugin-token');
+    expect(sent, {'serverClientId': 'web-client'});
   });
-
-  test('a configuration error names the code and the reason', () async {
-    final attempt = await googleSignInAttempt(
-      serverClientId: 'web-client',
-      platform: FakeGoogleSignIn(
-        error: const GoogleSignInException(
-          code: GoogleSignInExceptionCode.clientConfigurationError,
-          description: 'unregistered SHA-1',
-        ),
-      ),
-    );
-
-    expect(attempt.status, GoogleSignInStatus.failed);
-    expect(attempt.detail, contains('clientConfigurationError'));
-    expect(attempt.detail, contains('unregistered SHA-1'));
-  });
-
-  test('an exception from init is classified too', () async {
-    final attempt = await googleSignInAttempt(
-      serverClientId: 'web-client',
-      platform: FakeGoogleSignIn(
-        initError: const GoogleSignInException(
-          code: GoogleSignInExceptionCode.providerConfigurationError,
-          description: 'no Play services',
-        ),
-      ),
-    );
-
-    expect(attempt.status, GoogleSignInStatus.failed);
-    expect(attempt.detail, contains('no Play services'));
-  });
-
-  test('a platform with no sign-in flow fails loudly', () async {
-    final attempt = await googleSignInAttempt(
-      serverClientId: 'web-client',
-      platform: FakeGoogleSignIn(canAuthenticate: false),
-    );
-
-    expect(attempt.status, GoogleSignInStatus.failed);
-    expect(attempt.detail, contains('no Google sign-in flow'));
-  });
-
-  test(
-    'an account with no ID token fails rather than silently passing',
-    () async {
-      final attempt = await googleSignInAttempt(
-        serverClientId: 'web-client',
-        platform: FakeGoogleSignIn(result: googleResult(null)),
-      );
-
-      expect(attempt.status, GoogleSignInStatus.failed);
-      expect(attempt.detail, contains('no ID token'));
-    },
-  );
 }
